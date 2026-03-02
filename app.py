@@ -30,7 +30,7 @@ class PropertyIntelligencePlatform:
     def __init__(self):
         self.init_database_connections()
         self.init_database_schema()
-        self.ensure_admin_user()  # Always ensure admin exists
+        # Clean slate - no pre-created admin accounts
         
     def init_database_connections(self):
         """Initialize database connections"""
@@ -171,65 +171,7 @@ class PropertyIntelligencePlatform:
         except Exception as e:
             print(f"❌ Database initialization error: {e}")
     
-    def ensure_admin_user(self):
-        """Ensure admin user exists - creates Jacob's admin account if missing"""
-        try:
-            conn = self.get_db_connection()
-            
-            if DATABASE_TYPE == 'postgresql':
-                cursor = conn.cursor()
-                # Check if admin user exists
-                cursor.execute("SELECT id FROM users WHERE email = %s", ('bizzy.b.33@icloud.com',))
-            else:
-                cursor = conn.cursor()
-                cursor.execute("SELECT id FROM users WHERE email = ?", ('bizzy.b.33@icloud.com',))
-            
-            if cursor.fetchone() is None:
-                # Create Jacob's admin account
-                email = 'bizzy.b.33@icloud.com'
-                password = 'IIQadmin21$'
-                password_hash = self.hash_password(password)
-                
-                if DATABASE_TYPE == 'postgresql':
-                    cursor.execute('''
-                        INSERT INTO users (email, password_hash, first_name, last_name, company, phone,
-                                         approval_status, access_level, verified, terms_accepted)
-                        VALUES (%s, %s, %s, %s, %s, %s, 'approved', 'admin', TRUE, TRUE)
-                    ''', (email, password_hash, 'Jacob', 'Lister', 'InvestorIQ Demo', ''))
-                else:
-                    cursor.execute('''
-                        INSERT INTO users (email, password_hash, first_name, last_name, company, phone,
-                                         approval_status, access_level, verified, terms_accepted)
-                        VALUES (?, ?, ?, ?, ?, ?, 'approved', 'admin', 1, 1)
-                    ''', (email, password_hash, 'Jacob', 'Lister', 'InvestorIQ Demo', ''))
-                
-                conn.commit()
-                print(f"✅ Created admin user: {email}")
-            else:
-                # User exists, reset password to ensure it works
-                password_hash = self.hash_password('IIQadmin21$')
-                if DATABASE_TYPE == 'postgresql':
-                    cursor.execute('''
-                        UPDATE users SET password_hash = %s, 
-                               approval_status = 'approved', access_level = 'admin',
-                               verified = TRUE, terms_accepted = TRUE
-                        WHERE email = %s
-                    ''', (password_hash, 'bizzy.b.33@icloud.com'))
-                else:
-                    cursor.execute('''
-                        UPDATE users SET password_hash = ?,
-                               approval_status = 'approved', access_level = 'admin',
-                               verified = 1, terms_accepted = 1
-                        WHERE email = ?
-                    ''', (password_hash, 'bizzy.b.33@icloud.com'))
-                conn.commit()
-                print(f"✅ Reset password for: bizzy.b.33@icloud.com")
-            
-            conn.close()
-            
-        except Exception as e:
-            print(f"⚠️ Admin user creation failed: {e}")
-    
+
     def hash_password(self, password):
         """Hash password with salt"""
         salt = secrets.token_hex(32)
