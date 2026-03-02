@@ -4,7 +4,7 @@ InvestorIQ Property Intelligence Platform - PostgreSQL Version
 Professional platform with persistent database and user authentication
 """
 
-from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash
+from flask import Flask, render_template, jsonify, request
 import os
 import re
 from datetime import datetime
@@ -29,8 +29,7 @@ app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 class PropertyIntelligencePlatform:
     def __init__(self):
         self.init_database_connections()
-        self.init_database_schema()
-        # Clean slate - no pre-created admin accounts
+        # No user authentication needed for demo
         
     def init_database_connections(self):
         """Initialize database connections"""
@@ -793,117 +792,18 @@ class PropertyIntelligencePlatform:
 # Initialize platform
 platform = PropertyIntelligencePlatform()
 
-# Authentication decorators
-def login_required(f):
-    """Decorator to require authentication"""
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    decorated_function.__name__ = f.__name__
-    return decorated_function
-
-def admin_required(f):
-    """Decorator to require admin privileges"""
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session or not session.get('is_admin', False):
-            flash('Admin access required', 'error')
-            return redirect(url_for('dashboard'))
-        return f(*args, **kwargs)
-    decorated_function.__name__ = f.__name__
-    return decorated_function
-
-def terms_required(f):
-    """Decorator to require terms acceptance"""
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('login'))
-        if not session.get('terms_accepted', False):
-            return redirect(url_for('terms'))
-        return f(*args, **kwargs)
-    decorated_function.__name__ = f.__name__
-    return decorated_function
+# Authentication removed for demo purposes
 
 # Routes (same as before, no changes needed)
 @app.route('/')
 def index():
-    """Landing page"""
-    if 'user_id' in session:
-        if session.get('terms_accepted', False):
-            return redirect(url_for('dashboard'))
-        else:
-            return redirect(url_for('terms'))
-    return redirect(url_for('login'))
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """User login page"""
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        success, result = platform.authenticate_user(email, password)
-        
-        if success:
-            user_data = result
-            session['user_id'] = user_data['id']
-            session['user_email'] = user_data['email']
-            session['user_name'] = f"{user_data['first_name']} {user_data['last_name']}"
-            session['access_level'] = user_data['access_level']
-            session['terms_accepted'] = user_data['terms_accepted']
-            session['is_admin'] = user_data['is_admin']
-            
-            platform.log_access(user_data['id'], 'login', ip_address=request.remote_addr)
-            
-            if user_data['terms_accepted']:
-                return redirect(url_for('dashboard'))
-            else:
-                return redirect(url_for('terms'))
-        else:
-            flash(result, 'error')
-    
-    return render_template('login.html')
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    """User registration page"""
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        first_name = request.form.get('first_name')
-        last_name = request.form.get('last_name')
-        company = request.form.get('company')
-        phone = request.form.get('phone')
-        business_justification = request.form.get('business_justification')
-        
-        if password != confirm_password:
-            flash('Passwords do not match', 'error')
-            return render_template('register.html')
-        
-        success, result = platform.create_user(email, password, first_name, last_name, company, phone, business_justification)
-        
-        if success:
-            flash('Registration submitted! Your account is pending admin approval. You will be notified when approved.', 'success')
-            return redirect(url_for('login'))
-        else:
-            flash(result, 'error')
-    
-    return render_template('register.html')
-
-@app.route('/terms')
-@login_required
-def terms():
-    """Terms of service acceptance"""
-    if session.get('terms_accepted', False):
-        return redirect(url_for('dashboard'))
-    return render_template('terms.html')
+    """Landing page - direct to dashboard"""
+    return redirect(url_for('dashboard'))
 
 @app.route('/accept-terms', methods=['POST'])
-@login_required
+
 def accept_terms():
     """Accept terms of service"""
-    user_id = session['user_id']
     
     try:
         conn = platform.get_db_connection()
@@ -920,79 +820,55 @@ def accept_terms():
     except:
         pass
     
-    session['terms_accepted'] = True
-    platform.log_access(user_id, 'terms_accepted', ip_address=request.remote_addr)
     
     return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
-@terms_required
+
 def dashboard():
     """Main dashboard"""
     analytics = platform.get_analytics_summary()
     cities = platform.get_cities_list()
     
-    platform.log_access(session['user_id'], 'dashboard_view', ip_address=request.remote_addr)
-    
-    return render_template('dashboard.html', analytics=analytics, cities=cities, user_name=session['user_name'])
+    return render_template('dashboard.html', analytics=analytics, cities=cities, user_name='Demo User')
 
 @app.route('/admin')
-@admin_required
-@terms_required
+
+
 def admin_panel():
     """Admin panel for user approval"""
     pending_users = platform.get_pending_users()
-    return render_template('admin_panel.html', pending_users=pending_users, user_name=session['user_name'])
+    return render_template('admin_panel.html', pending_users=pending_users, user_name='Demo User')
 
 @app.route('/admin/approve/<int:user_id>', methods=['POST'])
-@admin_required
+
 def approve_user(user_id):
     """Approve a pending user"""
     admin_notes = request.form.get('admin_notes', '')
-    success = platform.approve_user(user_id, session['user_id'], admin_notes)
     
     if success:
-        flash('User approved successfully!', 'success')
-        platform.log_access(session['user_id'], f'user_approved_{user_id}', ip_address=request.remote_addr)
     else:
-        flash('Error approving user', 'error')
     
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/reject/<int:user_id>', methods=['POST'])
-@admin_required
+
 def reject_user(user_id):
     """Reject a pending user"""
     admin_notes = request.form.get('admin_notes', '')
-    success = platform.reject_user(user_id, session['user_id'], admin_notes)
     
     if success:
-        flash('User rejected', 'warning')
-        platform.log_access(session['user_id'], f'user_rejected_{user_id}', ip_address=request.remote_addr)
     else:
-        flash('Error rejecting user', 'error')
     
     return redirect(url_for('admin_panel'))
 
-@app.route('/logout')
-def logout():
-    """User logout"""
-    if 'user_id' in session:
-        platform.log_access(session['user_id'], 'logout', ip_address=request.remote_addr)
-    
-    session.clear()
-    flash('You have been logged out successfully.', 'info')
-    return redirect(url_for('login'))
-
-# API Routes
 @app.route('/api/properties')
-@terms_required
+
 def api_properties():
     """API endpoint for properties with filtering"""
     filters = {k: v for k, v in request.args.items() if v}
     properties = platform.get_all_properties(filters)
     
-    platform.log_access(session['user_id'], 'properties_api', ip_address=request.remote_addr)
     
     return jsonify({
         'success': True,
@@ -1000,52 +876,50 @@ def api_properties():
     })
 
 @app.route('/api/analytics')
-@terms_required
+
 def api_analytics():
     """API endpoint for analytics data"""
     analytics = platform.get_analytics_summary()
-    platform.log_access(session['user_id'], 'analytics_api', ip_address=request.remote_addr)
     return jsonify(analytics)
 
 # Feature routes
 @app.route('/properties')
-@terms_required
+
 def properties_list():
     """Properties list view with thumbnails and detailed cards"""
     cities = platform.get_cities_list()
-    platform.log_access(session['user_id'], 'properties_view', ip_address=request.remote_addr)
-    return render_template('properties.html', cities=cities, user_name=session['user_name'])
+    return render_template('properties.html', cities=cities, user_name='Demo User')
 
 @app.route('/map')
-@terms_required
+
 def map_view():
     """Map view of properties"""
-    return render_template('map.html', user_name=session['user_name'])
+    return render_template('map.html', user_name='Demo User')
 
 @app.route('/roi-calculator')
-@terms_required
+
 def roi_calculator():
     """ROI Calculator interface"""
-    return render_template('roi_calculator.html', user_name=session['user_name'])
+    return render_template('roi_calculator.html', user_name='Demo User')
 
 @app.route('/deal-pipeline')
-@terms_required
+
 def deal_pipeline():
     """Deal pipeline management interface"""
-    return render_template('deal_pipeline.html', user_name=session['user_name'])
+    return render_template('deal_pipeline.html', user_name='Demo User')
 
 @app.route('/social-intelligence')
-@terms_required
+
 def social_intelligence():
     """Social intelligence dashboard"""
-    return render_template('social_intelligence.html', user_name=session['user_name'])
+    return render_template('social_intelligence.html', user_name='Demo User')
 
 @app.route('/business-intelligence')
-@terms_required
+
 def business_intelligence():
     """Business intelligence dashboard"""
     analytics = platform.get_analytics_summary()
-    return render_template('business_intelligence.html', analytics=analytics, user_name=session['user_name'])
+    return render_template('business_intelligence.html', analytics=analytics, user_name='Demo User')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
