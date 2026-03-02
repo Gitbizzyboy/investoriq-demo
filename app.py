@@ -170,7 +170,82 @@ class PropertyIntelligencePlatform:
             
         except Exception as e:
             print(f"❌ Database initialization error: {e}")
+            # Create basic SQLite fallback
+            try:
+                conn = sqlite3.connect('./users.db')
+                cursor = conn.cursor()
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        email TEXT UNIQUE NOT NULL,
+                        password_hash TEXT NOT NULL,
+                        first_name TEXT NOT NULL,
+                        last_name TEXT NOT NULL,
+                        company TEXT,
+                        phone TEXT,
+                        user_type TEXT DEFAULT 'investor',
+                        verified BOOLEAN DEFAULT 0,
+                        terms_accepted BOOLEAN DEFAULT 0,
+                        access_level TEXT DEFAULT 'basic',
+                        approval_status TEXT DEFAULT 'pending',
+                        approved_by INTEGER,
+                        approved_at TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        last_login TIMESTAMP
+                    )
+                ''')
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS access_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER REFERENCES users(id),
+                        action TEXT NOT NULL,
+                        resource TEXT,
+                        ip_address TEXT,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS approval_requests (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER REFERENCES users(id),
+                        request_reason TEXT,
+                        business_justification TEXT,
+                        admin_notes TEXT,
+                        status TEXT DEFAULT 'pending',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        reviewed_at TIMESTAMP,
+                        reviewed_by INTEGER
+                    )
+                ''')
+                conn.commit()
+                conn.close()
+                print("✅ Fallback SQLite schema created")
+                global DATABASE_TYPE
+                DATABASE_TYPE = 'sqlite'
+            except Exception as fallback_error:
+                print(f"❌ Fallback schema creation failed: {fallback_error}")
     
+
+    def ensure_database_ready(self):
+        """Ensure database tables exist before operations"""
+        try:
+            conn = self.get_db_connection()
+            cursor = conn.cursor()
+            
+            # Test if users table exists
+            if DATABASE_TYPE == 'postgresql':
+                cursor.execute("SELECT 1 FROM users LIMIT 1")
+            else:
+                cursor.execute("SELECT 1 FROM users LIMIT 1")
+            
+            conn.close()
+            return True
+            
+        except Exception:
+            # Table doesn't exist, reinitialize
+            print("🔧 Database tables missing, reinitializing...")
+            self.init_database_schema()
+            return True
 
     def hash_password(self, password):
         """Hash password with salt"""
@@ -194,6 +269,8 @@ class PropertyIntelligencePlatform:
     def create_user(self, email, password, first_name, last_name, company=None, phone=None, business_justification=None):
         """Create new user account with PostgreSQL support"""
         try:
+            # Ensure database is ready
+            self.ensure_database_ready()
             conn = self.get_db_connection()
             
             if DATABASE_TYPE == 'postgresql':
@@ -279,6 +356,8 @@ class PropertyIntelligencePlatform:
     def authenticate_user(self, email, password):
         """Authenticate user login with PostgreSQL support"""
         try:
+            # Ensure database is ready
+            self.ensure_database_ready()
             conn = self.get_db_connection()
             
             if DATABASE_TYPE == 'postgresql':
