@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Properties - InvestorIQ Property Intelligence Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <style>
+        .properties-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        .rating-badge {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 5px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        .rating-1 { background-color: #dc3545; }
+        .rating-2 { background-color: #fd7e14; }
+        .rating-3 { background-color: #ffc107; color: black; }
+        .rating-4 { background-color: #20c997; }
+        .rating-5 { background-color: #28a745; }
+        .property-card {
+            border-left: 4px solid #667eea;
+            transition: all 0.2s;
+            margin-bottom: 1rem;
+        }
+        .property-card:hover {
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .high-opportunity { border-left-color: #dc3545 !important; }
+        .medium-opportunity { border-left-color: #fd7e14 !important; }
+        .standard-opportunity { border-left-color: #ffc107 !important; }
+        .low-opportunity { border-left-color: #28a745 !important; }
+        .filter-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .view-toggle {
+            background: white;
+            padding: 0.5rem;
+            border-radius: 25px;
+            border: 2px solid #667eea;
+        }
+        .view-toggle .btn {
+            border-radius: 20px;
+            border: none;
+            padding: 0.5rem 1rem;
+            margin: 0 0.25rem;
+        }
+        .view-toggle .btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .property-thumbnail {
+            width: 120px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .property-thumbnail:hover {
+            transform: scale(1.05);
+        }
+        .thumbnail-placeholder {
+            width: 120px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .thumbnail-placeholder:hover {
+            transform: scale(1.05);
+        }
+        .property-stats {
+            background: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 5px;
+            margin-top: 0.5rem;
+        }
+        .stats-item {
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        .stats-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stats-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-brain me-2"></i>
+                InvestorIQ
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-home me-1"></i>Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('properties_list') }}"><i class="fas fa-list me-1"></i>Properties</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('map_view') }}"><i class="fas fa-map me-1"></i>Map View</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('deal_pipeline') }}"><i class="fas fa-tasks me-1"></i>Pipeline</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('roi_calculator') }}"><i class="fas fa-calculator me-1"></i>ROI Calculator</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-chart-bar me-1"></i>Intelligence
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('social_intelligence') }}">Social Intelligence</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('business_intelligence') }}">Business Intelligence</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if session.get('is_admin') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_panel') }}">
+                            <i class="fas fa-users-cog me-1"></i>Admin Panel
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>{{ user_name }}
+                            {% if session.get('is_admin') %}
+                            <span class="badge bg-danger ms-1">ADMIN</span>
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Properties Header -->
+    <section class="properties-header text-center">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="display-5 fw-bold mb-2">
+                        <i class="fas fa-home me-3"></i>Property Intelligence
+                    </h1>
+                    <p class="lead">Discover high-value investment opportunities</p>
+                </div>
+                <div class="col-md-6">
+                    <div class="view-toggle">
+                        <button type="button" class="btn active" id="listViewBtn">
+                            <i class="fas fa-list me-2"></i>List View
+                        </button>
+                        <button type="button" class="btn" id="mapViewBtn" onclick="window.location.href='{{ url_for('map_view') }}'">
+                            <i class="fas fa-map me-2"></i>Map View
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container mt-4">
+        <!-- Summary Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-item">
+                    <div class="stats-number" id="totalProperties">-</div>
+                    <div class="stats-label">Total Properties</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-item">
+                    <div class="stats-number" id="totalDebt">-</div>
+                    <div class="stats-label">Total Tax Debt</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-item">
+                    <div class="stats-number" id="avgValue">-</div>
+                    <div class="stats-label">Average Value</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-item">
+                    <div class="stats-number" id="highOpportunity">-</div>
+                    <div class="stats-label">High Opportunity</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Property Filters -->
+        <div class="filter-section">
+            <h5><i class="fas fa-filter me-2"></i>Property Filters</h5>
+            <div class="row">
+                <div class="col-md-2">
+                    <label class="form-label">County</label>
+                    <select class="form-select" id="countyFilter">
+                        <option value="">All Counties</option>
+                        <option value="Rock Island">Rock Island, IL</option>
+                        <option value="Scott">Scott County, IA</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">City</label>
+                    <select class="form-select" id="cityFilter">
+                        <option value="">All Cities</option>
+                        {% for city in cities %}
+                        <option value="{{ city }}">{{ city }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Opportunity</label>
+                    <select class="form-select" id="potentialFilter">
+                        <option value="">All Opportunities</option>
+                        <option value="High Opportunity">High Opportunity</option>
+                        <option value="Medium Opportunity">Medium Opportunity</option>
+                        <option value="Standard Opportunity">Standard</option>
+                        <option value="Low Opportunity">Low Opportunity</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" id="methodologyFilter">
+                        <option value="">All Types</option>
+                        <option value="Tax Distressed">Tax Distressed</option>
+                        <option value="Foreclosure">Foreclosure</option>
+                        <option value="Low Assessed Value">Low Value</option>
+                        <option value="Platform/Other">Platform/Other</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Min Score</label>
+                    <input type="number" class="form-control" id="minScoreFilter" placeholder="Min Score">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" id="applyFilters">
+                        <i class="fas fa-search me-1"></i>Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Properties List -->
+        <div id="propertiesList">
+            <!-- Properties will be loaded here -->
+        </div>
+
+        <!-- Loading indicator -->
+        <div class="text-center py-5" id="loadingIndicator">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading properties...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <script>
+        let propertiesData = [];
+
+        $(document).ready(function() {
+            loadProperties();
+            
+            // Filter handlers
+            $('#applyFilters').click(function() {
+                applyFilters();
+            });
+        });
+
+        function loadProperties(filters = {}) {
+            $('#loadingIndicator').show();
+            
+            $.get('/api/properties', filters)
+                .done(function(response) {
+                    const data = response.success ? response.properties : response;
+                    propertiesData = data;
+                    displayProperties(data);
+                    updateStats(data);
+                    $('#loadingIndicator').hide();
+                })
+                .fail(function() {
+                    $('#loadingIndicator').hide();
+                    $('#propertiesList').html('<div class="alert alert-danger">Failed to load properties</div>');
+                });
+        }
+
+        function displayProperties(properties) {
+            if (!properties || properties.length === 0) {
+                $('#propertiesList').html('<div class="alert alert-info">No properties found matching your criteria.</div>');
+                return;
+            }
+
+            let html = '';
+            
+            properties.forEach(function(property, index) {
+                const opportunityClass = property.investment_potential.toLowerCase().replace(' ', '-');
+                
+                // Create ratings HTML
+                const ratingsHtml = `
+                    <div class="ratings-container mb-2">
+                        <small class="text-muted d-block mb-1">Investment Ratings:</small>
+                        <span class="rating-badge rating-${property.ratings.tax_distress}" title="Tax Distress">${property.ratings.tax_distress}</span>
+                        <span class="rating-badge rating-${property.ratings.foreclosure_risk}" title="Foreclosure Risk">${property.ratings.foreclosure_risk}</span>
+                        <span class="rating-badge rating-${property.ratings.value_opportunity}" title="Value Opportunity">${property.ratings.value_opportunity}</span>
+                        <span class="rating-badge rating-${property.ratings.owner_motivation}" title="Owner Motivation">${property.ratings.owner_motivation}</span>
+                        <span class="rating-badge rating-${property.ratings.acquisition_ease}" title="Acquisition Ease">${property.ratings.acquisition_ease}</span>
+                    </div>
+                `;
+
+                // Create thumbnail
+                const thumbnail = property.street_view_thumbnail ? 
+                    `<img src="${property.street_view_thumbnail}" alt="Property Preview" class="property-thumbnail" 
+                          onclick="window.open('${property.street_view_url}', '_blank')" 
+                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                     <div class="thumbnail-placeholder" style="display: none;" onclick="window.open('${property.street_view_url}', '_blank')">
+                         <div class="text-center">
+                             <i class="fas fa-camera fa-lg mb-1"></i>
+                             <br><small style="font-size: 10px;">View Property</small>
+                         </div>
+                     </div>` : 
+                    `<div class="thumbnail-placeholder" onclick="window.open('${property.street_view_url}', '_blank')">
+                         <div class="text-center">
+                             <i class="fas fa-camera fa-lg mb-1"></i>
+                             <br><small style="font-size: 10px;">View Property</small>
+                         </div>
+                     </div>`;
+
+                html += `
+                    <div class="card property-card ${opportunityClass}">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-2 text-center">
+                                    ${thumbnail}
+                                    <div class="mt-2">
+                                        <span class="badge bg-${getOpportunityColor(property.investment_potential)} w-100">
+                                            ${property.investment_potential}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6 class="mb-1">
+                                        <strong>${property.property_address}</strong>
+                                    </h6>
+                                    <p class="text-muted mb-2">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        ${property.city}, ${property.county}
+                                    </p>
+                                    <p class="mb-1">
+                                        <strong>Owner:</strong> ${property.owner_name || 'Unknown'}
+                                    </p>
+                                    <p class="mb-1">
+                                        <strong>Type:</strong> ${property.distressed_type}
+                                    </p>
+                                    <p class="mb-0">
+                                        <strong>Score:</strong> <span class="badge bg-primary">${property.distressed_score}</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="property-stats">
+                                        <div class="row text-center">
+                                            <div class="col-6">
+                                                <div><strong>$${(property.assessed_value || 0).toLocaleString()}</strong></div>
+                                                <small class="text-muted">Assessed Value</small>
+                                            </div>
+                                            <div class="col-6">
+                                                <div><strong class="text-danger">$${(property.tax_amount || 0).toLocaleString()}</strong></div>
+                                                <small class="text-muted">Tax Debt</small>
+                                            </div>
+                                        </div>
+                                        <div class="row text-center mt-2">
+                                            <div class="col-12">
+                                                <div><strong>${property.market_tier}</strong></div>
+                                                <small class="text-muted">Market Tier</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ${ratingsHtml}
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="d-grid gap-2">
+                                        <a href="${property.street_view_url}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-street-view me-1"></i>Street View
+                                        </a>
+                                        <a href="${property.google_maps_url}" target="_blank" class="btn btn-outline-success btn-sm">
+                                            <i class="fas fa-map me-1"></i>Google Maps
+                                        </a>
+                                        <a href="${property.phone_lookup_url}" target="_blank" class="btn btn-outline-info btn-sm">
+                                            <i class="fas fa-phone me-1"></i>Contact Info
+                                        </a>
+                                        <button class="btn btn-primary btn-sm" onclick="addToPipeline('${property.property_address}')">
+                                            <i class="fas fa-plus me-1"></i>Add to Pipeline
+                                        </button>
+                                    </div>
+                                    
+                                    ${property.distress_indicators ? `
+                                    <div class="mt-2">
+                                        <small class="text-muted"><strong>Indicators:</strong></small><br>
+                                        <small>${property.distress_indicators}</small>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            $('#propertiesList').html(html);
+        }
+
+        function updateStats(properties) {
+            if (!properties || properties.length === 0) return;
+            
+            const totalProps = properties.length;
+            const totalDebt = properties.reduce((sum, p) => sum + (p.tax_amount || 0), 0);
+            const avgValue = properties.reduce((sum, p) => sum + (p.assessed_value || 0), 0) / totalProps;
+            const highOpp = properties.filter(p => p.investment_potential === 'High Opportunity').length;
+            
+            $('#totalProperties').text(totalProps.toLocaleString());
+            $('#totalDebt').text('$' + (totalDebt / 1000000).toFixed(1) + 'M');
+            $('#avgValue').text('$' + (avgValue / 1000).toFixed(0) + 'K');
+            $('#highOpportunity').text(highOpp);
+        }
+
+        function getOpportunityColor(potential) {
+            const colors = {
+                'High Opportunity': 'danger',
+                'Medium Opportunity': 'warning',
+                'Standard Opportunity': 'primary',
+                'Low Opportunity': 'success'
+            };
+            return colors[potential] || 'secondary';
+        }
+
+        function applyFilters() {
+            const filters = {
+                county: $('#countyFilter').val(),
+                city: $('#cityFilter').val(),
+                investment_potential: $('#potentialFilter').val(),
+                methodology_category: $('#methodologyFilter').val(),
+                min_score: $('#minScoreFilter').val()
+            };
+
+            // Remove empty filters
+            Object.keys(filters).forEach(key => {
+                if (!filters[key]) delete filters[key];
+            });
+
+            loadProperties(filters);
+        }
+
+        function addToPipeline(address) {
+            // TODO: Implement add to pipeline functionality
+            alert('Add to Pipeline feature coming soon!\n\nProperty: ' + address);
+        }
+    </script>
+</body>
+</html>

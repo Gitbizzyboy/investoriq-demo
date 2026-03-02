@@ -389,6 +389,7 @@ class PropertyIntelligencePlatform:
                     'market_tier': row[11],
                     'phone_lookup_url': row[12] if row[12] else "#",
                     'street_view_url': self.fix_street_view_url(row[2]),
+                    'street_view_thumbnail': self.create_property_thumbnail(row[2], row[4], row[0]) if row[2] else None,
                     'google_maps_url': self.fix_street_view_url(row[2]),
                     'apple_maps_url': self.create_apple_maps_url(row[2]) if row[2] else "#",
                     'original_google_maps_url': row[14],
@@ -425,6 +426,29 @@ class PropertyIntelligencePlatform:
         clean_address = ' '.join(address.replace('\n', ' ').split())
         encoded_address = urllib.parse.quote(clean_address)
         return f"https://maps.apple.com/?q={encoded_address}"
+    
+    def create_property_thumbnail(self, address, city, county):
+        """Create property thumbnail placeholder with address information"""
+        if not address:
+            return self.create_fallback_image("No Address")
+        
+        # Clean address for URL encoding
+        clean_address = ' '.join(address.replace('\n', ' ').split())
+        encoded_address = urllib.parse.quote(clean_address)
+        
+        # Use enhanced placeholder with address information (always works)
+        address_short = address.split(',')[0] if address else "Property"
+        if len(address_short) > 25:
+            address_short = address_short[:22] + "..."
+        
+        # Create placeholder image with property info
+        encoded_text = urllib.parse.quote(address_short.replace(' ', '+'))
+        return f"https://via.placeholder.com/400x300/667eea/ffffff?text=🏠+{encoded_text}"
+        
+    def create_fallback_image(self, text):
+        """Create enhanced placeholder image"""
+        encoded_text = urllib.parse.quote(text.replace(' ', '+'))
+        return f"https://via.placeholder.com/400x300/667eea/ffffff?text={encoded_text}"
     
     def calculate_indicator_ratings(self, property_data):
         """Calculate ratings for each distress indicator"""
@@ -726,7 +750,15 @@ def api_analytics():
     platform.log_access(session['user_id'], 'analytics_api', ip_address=request.remote_addr)
     return jsonify(analytics)
 
-# Feature routes (same as before)
+# Feature routes
+@app.route('/properties')
+@terms_required
+def properties_list():
+    """Properties list view with thumbnails and detailed cards"""
+    cities = platform.get_cities_list()
+    platform.log_access(session['user_id'], 'properties_view', ip_address=request.remote_addr)
+    return render_template('properties.html', cities=cities, user_name=session['user_name'])
+
 @app.route('/map')
 @terms_required
 def map_view():
