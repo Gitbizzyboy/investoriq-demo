@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-InvestorIQ - Minimal Demo Version (No Authentication)
+InvestorIQ - Minimal Demo Version (No Authentication) - v2
 """
 
 from flask import Flask, render_template, jsonify, redirect
