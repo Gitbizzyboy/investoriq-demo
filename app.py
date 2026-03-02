@@ -203,6 +203,25 @@ class PropertyIntelligencePlatform:
                 
                 conn.commit()
                 print(f"✅ Created admin user: {email}")
+            else:
+                # User exists, reset password to ensure it works
+                password_hash = self.hash_password('IIQadmin21$')
+                if DATABASE_TYPE == 'postgresql':
+                    cursor.execute('''
+                        UPDATE users SET password_hash = %s, 
+                               approval_status = 'approved', access_level = 'admin',
+                               verified = TRUE, terms_accepted = TRUE
+                        WHERE email = %s
+                    ''', (password_hash, 'bizzy.b.33@icloud.com'))
+                else:
+                    cursor.execute('''
+                        UPDATE users SET password_hash = ?,
+                               approval_status = 'approved', access_level = 'admin',
+                               verified = 1, terms_accepted = 1
+                        WHERE email = ?
+                    ''', (password_hash, 'bizzy.b.33@icloud.com'))
+                conn.commit()
+                print(f"✅ Reset password for: bizzy.b.33@icloud.com")
             
             conn.close()
             
