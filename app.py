@@ -35,12 +35,12 @@ class PropertyIntelligencePlatform:
         self.master_db = './QUAD_CITIES_MASTER_DATASET.db'  # SQLite for property data (read-only)
         
         # Users database - PostgreSQL or SQLite
+        global DATABASE_TYPE
         if DATABASE_TYPE == 'postgresql':
             self.database_url = os.environ.get('DATABASE_URL')
             if not self.database_url:
                 print("❌ DATABASE_URL not found, falling back to SQLite")
                 self.database_url = './users.db'
-                global DATABASE_TYPE
                 DATABASE_TYPE = 'sqlite'
         else:
             self.database_url = './users.db'
