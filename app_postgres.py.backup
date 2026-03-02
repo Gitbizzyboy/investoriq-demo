@@ -18,7 +18,7 @@ import sqlite3  # Always needed for master property database
 try:
     import psycopg2
     import psycopg2.extras
-    DATABASE_TYPE = 'sqlite'  # Force SQLite for reliable deployment
+    DATABASE_TYPE = 'postgresql'
 except ImportError:
     DATABASE_TYPE = 'sqlite'
     print("⚠️ PostgreSQL not available, falling back to SQLite")
