@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Details - InvestorIQ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        .property-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        .detail-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .rating-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            margin: 0 auto;
+        }
+        .rating-1 { background: linear-gradient(45deg, #dc3545, #c82333); }
+        .rating-2 { background: linear-gradient(45deg, #fd7e14, #e55a4e); }
+        .rating-3 { background: linear-gradient(45deg, #ffc107, #ff8f00); }
+        .rating-4 { background: linear-gradient(45deg, #20c997, #17a2b8); }
+        .rating-5 { background: linear-gradient(45deg, #28a745, #20c997); }
+        .street-view-container {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .action-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            color: white;
+        }
+        .metric-highlight {
+            text-align: center;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .opportunity-badge {
+            font-size: 1.2rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+        .high-opportunity { background: #dc3545; }
+        .medium-opportunity { background: #fd7e14; }
+        .standard-opportunity { background: #ffc107; color: #000; }
+        .low-opportunity { background: #28a745; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-brain me-2"></i>
+                InvestorIQ
+            </a>
+            <div class="ms-auto">
+                <a href="/" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Property Hero -->
+    <section class="property-hero">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 id="propertyAddress">Loading Property...</h1>
+                    <p class="lead" id="propertyLocation">Location information</p>
+                    <div class="d-flex align-items-center">
+                        <span id="opportunityBadge" class="badge opportunity-badge me-3">Loading...</span>
+                        <span class="text-light">Distress Score: <span id="distressScore">--</span></span>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="metric-highlight text-dark">
+                        <h3 id="taxAmount" class="text-danger mb-0">$--</h3>
+                        <small>Tax Debt</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container mt-4">
+        <!-- Property Overview -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="detail-card">
+                    <h5><i class="fas fa-home me-2"></i>Property Overview</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Property Address:</strong></td>
+                                    <td id="detailAddress">--</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Owner Name:</strong></td>
+                                    <td id="ownerName">--</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>City:</strong></td>
+                                    <td id="detailCity">--</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>County:</strong></td>
+                                    <td id="detailCounty">--</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Assessed Value:</strong></td>
+                                    <td id="assessedValue">--</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tax Amount:</strong></td>
+                                    <td id="detailTaxAmount" class="text-danger">--</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Property Type:</strong></td>
+                                    <td id="distressedType">--</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Market Tier:</strong></td>
+                                    <td id="marketTier">--</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="detail-card">
+                    <h5><i class="fas fa-street-view me-2"></i>Property Location</h5>
+                    
+                    <!-- Street View Image Container -->
+                    <div class="street-view-container position-relative">
+                        <img id="streetViewImage" src="" alt="Property Location" class="img-fluid" style="width: 100%; height: 200px; object-fit: cover;">
+                        
+                        <!-- Overlay for properties without API key -->
+                        <div id="apiKeyNotice" class="position-absolute top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px;">
+                            <div class="text-center">
+                                <i class="fas fa-camera fa-2x mb-2"></i>
+                                <h6>Click for Live Street View</h6>
+                                <small>For actual property photos, get a free Google API key</small>
+                                <br>
+                                <a href="#" class="btn btn-sm btn-light mt-2" onclick="showApiInstructions()">
+                                    <i class="fas fa-info-circle me-1"></i>Get Real Images
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Map Options -->
+                    <div class="mt-3 text-center">
+                        <div class="btn-group-vertical d-grid gap-1">
+                            <a id="fullStreetView" href="#" target="_blank" class="btn btn-sm btn-primary">
+                                <i class="fas fa-map-marker-alt me-1"></i>View on Google Maps
+                            </a>
+                            <a id="appleMapView" href="#" target="_blank" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-map me-1"></i>View on Apple Maps
+                            </a>
+                            <button class="btn btn-sm btn-outline-info" onclick="showApiInstructions()">
+                                <i class="fas fa-camera me-1"></i>Enable Real Photos
+                            </button>
+                        </div>
+                        <small id="searchAddress" class="text-muted mt-2 d-block"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Investment Ratings -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="detail-card">
+                    <h5><i class="fas fa-chart-bar me-2"></i>Investment Analysis Ratings</h5>
+                    <div class="row text-center">
+                        <div class="col">
+                            <div class="rating-circle" id="taxDistressRating">-</div>
+                            <h6 class="mt-2">Tax Distress</h6>
+                            <small class="text-muted">Level of tax debt</small>
+                        </div>
+                        <div class="col">
+                            <div class="rating-circle" id="foreclosureRiskRating">-</div>
+                            <h6 class="mt-2">Foreclosure Risk</h6>
+                            <small class="text-muted">Legal proceeding likelihood</small>
+                        </div>
+                        <div class="col">
+                            <div class="rating-circle" id="valueOpportunityRating">-</div>
+                            <h6 class="mt-2">Value Opportunity</h6>
+                            <small class="text-muted">Below-market potential</small>
+                        </div>
+                        <div class="col">
+                            <div class="rating-circle" id="ownerMotivationRating">-</div>
+                            <h6 class="mt-2">Owner Motivation</h6>
+                            <small class="text-muted">Seller motivation indicators</small>
+                        </div>
+                        <div class="col">
+                            <div class="rating-circle" id="acquisitionEaseRating">-</div>
+                            <h6 class="mt-2">Acquisition Ease</h6>
+                            <small class="text-muted">Purchase difficulty</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Investment Analysis -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="detail-card">
+                    <h5><i class="fas fa-calculator me-2"></i>Investment Projections</h5>
+                    <div class="metric-highlight mb-3">
+                        <h4 id="potentialROI" class="text-success">-- % ROI</h4>
+                        <small>Projected Return on Investment</small>
+                    </div>
+                    <table class="table table-sm">
+                        <tr>
+                            <td>Estimated Acquisition Cost:</td>
+                            <td id="acquisitionCost" class="text-end">--</td>
+                        </tr>
+                        <tr>
+                            <td>Potential Rehab Cost:</td>
+                            <td id="rehabCost" class="text-end">--</td>
+                        </tr>
+                        <tr>
+                            <td>After Repair Value (ARV):</td>
+                            <td id="afterRepairValue" class="text-end">--</td>
+                        </tr>
+                        <tr class="table-success">
+                            <td><strong>Potential Profit:</strong></td>
+                            <td id="potentialProfit" class="text-end"><strong>--</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="detail-card">
+                    <h5><i class="fas fa-flag me-2"></i>Distress Indicators</h5>
+                    <div id="distressIndicators">
+                        <!-- Indicators will be loaded here -->
+                    </div>
+                    <div class="mt-3">
+                        <h6>Investment Strategy Recommendations:</h6>
+                        <ul id="strategyRecommendations">
+                            <!-- Recommendations will be loaded here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="detail-card text-center">
+                    <h5><i class="fas fa-rocket me-2"></i>Take Action</h5>
+                    <div class="btn-group-vertical btn-group-lg">
+                        <a id="phoneContactBtn" href="#" target="_blank" class="action-btn mb-2">
+                            <i class="fas fa-phone me-2"></i>Contact Owner
+                        </a>
+                        <a id="googleMapsBtn" href="#" target="_blank" class="action-btn mb-2">
+                            <i class="fas fa-map-marker-alt me-2"></i>View on Google Maps
+                        </a>
+                        <a href="/" class="action-btn">
+                            <i class="fas fa-list me-2"></i>Back to Property List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const propertyId = urlParams.get('id');
+            const propertyAddress = urlParams.get('address');
+            
+            if (propertyAddress) {
+                loadPropertyByAddress(decodeURIComponent(propertyAddress));
+            } else {
+                loadPropertyById(propertyId);
+            }
+        });
+
+        function loadPropertyByAddress(address) {
+            $.get('/api/properties')
+                .done(function(response) {
+                    // Handle new API format
+                    const data = response.success ? response.properties : response;
+                    const property = data.find(p => p.property_address === address);
+                    if (property) {
+                        displayPropertyDetails(property);
+                    } else {
+                        showPropertyNotFound();
+                    }
+                })
+                .fail(function() {
+                    showPropertyNotFound();
+                });
+        }
+
+        function loadPropertyById(id) {
+            // For now, load by index (future: implement proper ID system)
+            $.get('/api/properties')
+                .done(function(response) {
+                    // Handle new API format
+                    const data = response.success ? response.properties : response;
+                    if (data[id]) {
+                        displayPropertyDetails(data[id]);
+                    } else {
+                        showPropertyNotFound();
+                    }
+                })
+                .fail(function() {
+                    showPropertyNotFound();
+                });
+        }
+
+        function displayPropertyDetails(property) {
+            // Hero section
+            $('#propertyAddress').text(property.property_address);
+            $('#propertyLocation').text(`${property.city}, ${property.county} County, ${property.state}`);
+            $('#distressScore').text(property.distressed_score);
+            $('#taxAmount').text(formatCurrency(property.tax_amount));
+
+            // Opportunity badge
+            const badge = $('#opportunityBadge');
+            badge.text(property.investment_potential);
+            badge.removeClass().addClass('badge opportunity-badge me-3');
+            badge.addClass(property.investment_potential.toLowerCase().replace(' ', '-'));
+
+            // Property details
+            $('#detailAddress').text(property.property_address);
+            $('#ownerName').text(property.owner_name || 'Unknown');
+            $('#detailCity').text(property.city);
+            $('#detailCounty').text(`${property.county} County, ${property.state}`);
+            $('#assessedValue').text(formatCurrency(property.assessed_value));
+            $('#detailTaxAmount').text(formatCurrency(property.tax_amount));
+            $('#distressedType').text(property.distressed_type || 'Unknown');
+            $('#marketTier').text(property.market_tier || 'Unknown');
+
+            // Load actual property images using our new image service
+            loadPropertyImages(property);
+            
+            if (property.street_view_url) {
+                $('#fullStreetView').attr('href', property.street_view_url);
+            }
+            
+            if (property.apple_maps_url) {
+                $('#appleMapView').attr('href', property.apple_maps_url);
+            }
+            
+            // Show the address being searched for debugging
+            $('#searchAddress').text(`Searching: ${property.property_address}`);
+
+            // Ratings
+            updateRatingCircle('#taxDistressRating', property.ratings.tax_distress);
+            updateRatingCircle('#foreclosureRiskRating', property.ratings.foreclosure_risk);
+            updateRatingCircle('#valueOpportunityRating', property.ratings.value_opportunity);
+            updateRatingCircle('#ownerMotivationRating', property.ratings.owner_motivation);
+            updateRatingCircle('#acquisitionEaseRating', property.ratings.acquisition_ease);
+
+            // Investment analysis
+            calculateInvestmentProjections(property);
+
+            // Distress indicators
+            displayDistressIndicators(property);
+
+            // Action buttons
+            $('#phoneContactBtn').attr('href', property.phone_lookup_url);
+            $('#googleMapsBtn').attr('href', property.google_maps_url || property.street_view_url);
+        }
+
+        function updateRatingCircle(selector, rating) {
+            const circle = $(selector);
+            circle.text(rating);
+            circle.removeClass('rating-1 rating-2 rating-3 rating-4 rating-5');
+            circle.addClass(`rating-${rating}`);
+        }
+
+        async function loadPropertyImages(property) {
+            try {
+                // Check if property has street view thumbnail
+                if (property.street_view_thumbnail) {
+                    // Check if it's using demo_key (which doesn't work)
+                    if (property.street_view_thumbnail.includes('key=demo_key')) {
+                        // Replace with enhanced placeholder that shows property info
+                        displayEnhancedPlaceholder(property);
+                    } else {
+                        // Real API key - use the actual Street View image
+                        const imageGallery = {
+                            primary_image: property.street_view_thumbnail,
+                            all_images: [property.street_view_thumbnail],
+                            street_view_url: property.street_view_url || property.google_maps_url
+                        };
+                        displayPropertyImages(imageGallery);
+                    }
+                } else {
+                    displayEnhancedPlaceholder(property);
+                }
+                
+            } catch (error) {
+                console.log('Error loading images:', error);
+                displayEnhancedPlaceholder(property);
+            }
+        }
+
+        function displayEnhancedPlaceholder(property) {
+            const streetViewImage = $('#streetViewImage');
+            
+            // Create a professional-looking placeholder with property information
+            const address = property.property_address.replace(/\n/g, ' ');
+            const addressShort = address.length > 40 ? address.substring(0, 40) + "..." : address;
+            const city = property.city;
+            
+            // Use a property-themed placeholder that shows address
+            const placeholderUrl = `https://via.placeholder.com/640x480/2196F3/ffffff?text=📍+${encodeURIComponent(addressShort + ', ' + city)}`;
+            
+            streetViewImage.attr('src', placeholderUrl);
+            streetViewImage.attr('alt', `Property at ${address}`);
+            
+            // Show the API notice for getting real images
+            $('#apiKeyNotice').removeClass('d-none');
+            
+            // Update street view link to Google Maps
+            if (property.street_view_url) {
+                $('#fullStreetView').attr('href', property.street_view_url);
+            }
+            
+            // Add click handler to try live Google Street View
+            streetViewImage.css('cursor', 'pointer');
+            streetViewImage.off('click').on('click', function() {
+                if (property.street_view_url) {
+                    window.open(property.street_view_url, '_blank');
+                }
+            });
+        }
+
+        function displayPropertyImages(imageGallery) {
+            const streetViewImage = $('#streetViewImage');
+            
+            if (imageGallery.primary_image) {
+                streetViewImage.attr('src', imageGallery.primary_image);
+                streetViewImage.attr('alt', 'Property Street View');
+                
+                // Add click handler to show gallery if multiple images
+                if (imageGallery.all_images && imageGallery.all_images.length > 1) {
+                    streetViewImage.css('cursor', 'pointer');
+                    streetViewImage.off('click').on('click', function() {
+                        showImageGallery(imageGallery.all_images);
+                    });
+                    
+                    // Add gallery indicator
+                    if (!$('#galleryIndicator').length) {
+                        streetViewImage.parent().append(
+                            '<div id="galleryIndicator" class="position-absolute top-0 end-0 m-2">' +
+                            '<span class="badge bg-dark bg-opacity-75">' +
+                            '<i class="fas fa-images me-1"></i>' + imageGallery.all_images.length + '</span>' +
+                            '</div>'
+                        );
+                    }
+                }
+                
+                // Hide API notice since we have real images
+                $('#apiKeyNotice').addClass('d-none');
+            } else {
+                displayFallbackImage();
+            }
+            
+            // Update street view link
+            if (imageGallery.street_view_url) {
+                $('#fullStreetView').attr('href', imageGallery.street_view_url);
+            }
+        }
+
+        function displayFallbackImage(property) {
+            const streetViewImage = $('#streetViewImage');
+            
+            if (property) {
+                // Create enhanced placeholder with property info
+                const addressShort = property.property_address.substring(0, 30);
+                const placeholderUrl = `https://via.placeholder.com/640x300/4285F4/ffffff?text=🏠+${encodeURIComponent(addressShort + ', ' + property.city)}`;
+                streetViewImage.attr('src', placeholderUrl);
+            } else {
+                streetViewImage.attr('src', 'https://via.placeholder.com/640x300/667eea/ffffff?text=Property+Location');
+            }
+            
+            // Show API notice for better images
+            $('#apiKeyNotice').removeClass('d-none');
+        }
+
+        function showImageGallery(images) {
+            // Create a simple image gallery modal
+            const galleryHtml = `
+                <div class="modal fade" id="imageGalleryModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"><i class="fas fa-images me-2"></i>Property Images</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    ${images.map((img, i) => `
+                                        <div class="col-md-6 mb-3">
+                                            <img src="${img}" class="img-fluid rounded" alt="Property view ${i + 1}" 
+                                                 style="width: 100%; height: 200px; object-fit: cover;">
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing gallery modal
+            $('#imageGalleryModal').remove();
+            
+            // Add and show new gallery
+            $('body').append(galleryHtml);
+            new bootstrap.Modal(document.getElementById('imageGalleryModal')).show();
+        }
+
+        function calculateInvestmentProjections(property) {
+            const taxAmount = property.tax_amount || 0;
+            const assessedValue = property.assessed_value || 0;
+
+            // Conservative estimates
+            const acquisitionCost = Math.max(taxAmount * 0.3, 15000);
+            const rehabCost = assessedValue * 0.25;
+            const afterRepairValue = assessedValue * 1.15;
+            const totalCost = acquisitionCost + rehabCost;
+            const potentialProfit = afterRepairValue - totalCost;
+            const roi = totalCost > 0 ? (potentialProfit / totalCost * 100) : 0;
+
+            $('#acquisitionCost').text(formatCurrency(acquisitionCost));
+            $('#rehabCost').text(formatCurrency(rehabCost));
+            $('#afterRepairValue').text(formatCurrency(afterRepairValue));
+            $('#potentialProfit').text(formatCurrency(potentialProfit));
+            $('#potentialROI').text(`${roi.toFixed(0)}%`);
+        }
+
+        function displayDistressIndicators(property) {
+            const indicators = property.distress_indicators ? property.distress_indicators.split(',') : [];
+            const indicatorsHtml = indicators.map(indicator => 
+                `<span class="badge bg-warning me-1 mb-1">${indicator.trim()}</span>`
+            ).join('');
+            
+            $('#distressIndicators').html(indicatorsHtml || '<span class="text-muted">No specific indicators available</span>');
+
+            // Strategy recommendations
+            const recommendations = generateRecommendations(property);
+            const recommendationsHtml = recommendations.map(rec => `<li>${rec}</li>`).join('');
+            $('#strategyRecommendations').html(recommendationsHtml);
+        }
+
+        function generateRecommendations(property) {
+            const recommendations = [];
+            const taxAmount = property.tax_amount || 0;
+            const ratings = property.ratings;
+
+            if (taxAmount >= 100000) {
+                recommendations.push('Consider tax deed auction strategy - high tax debt indicates motivated seller');
+            }
+            
+            if (ratings.foreclosure_risk >= 4) {
+                recommendations.push('Monitor for foreclosure proceedings - may create acquisition opportunity');
+            }
+
+            if (ratings.value_opportunity >= 4) {
+                recommendations.push('Strong value-add opportunity - consider fix and flip strategy');
+            }
+
+            if (ratings.owner_motivation >= 4) {
+                recommendations.push('High owner motivation - direct contact approach recommended');
+            }
+
+            if (ratings.acquisition_ease >= 4) {
+                recommendations.push('Easy acquisition profile - suitable for quick closing');
+            }
+
+            if (property.market_tier === 'Deep-Value') {
+                recommendations.push('Deep value opportunity - consider wholesale to other investors');
+            }
+
+            return recommendations.length > 0 ? recommendations : ['Standard due diligence recommended'];
+        }
+
+        function formatCurrency(amount) {
+            return amount && amount > 0 ? `$${amount.toLocaleString()}` : '$0';
+        }
+
+        function showPropertyNotFound() {
+            $('#propertyAddress').text('Property Not Found');
+            $('#propertyLocation').text('Unable to load property details');
+        }
+
+        function showApiInstructions() {
+            const instructions = `
+                <div class="modal fade" id="apiInstructionsModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-camera me-2"></i>Enable Real Street View Photos
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Good news!</strong> Google provides 25,000 free Street View images per month.
+                                </div>
+                                
+                                <h6><i class="fas fa-key me-2"></i>Steps to Enable:</h6>
+                                <ol class="mb-4">
+                                    <li><strong>Get Free API Key:</strong>
+                                        <br><a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="btn btn-sm btn-primary mt-1">
+                                            <i class="fas fa-external-link-alt me-1"></i>Google Cloud Console
+                                        </a>
+                                    </li>
+                                    <li><strong>Enable APIs:</strong> Street View Static API & Maps Static API</li>
+                                    <li><strong>Add to Platform:</strong> Set environment variable GOOGLE_MAPS_API_KEY</li>
+                                </ol>
+                                
+                                <div class="alert alert-success">
+                                    <strong>Free Tier Includes:</strong>
+                                    <ul class="mb-0 mt-2">
+                                        <li>25,000 Street View images per month</li>
+                                        <li>No credit card required to start</li>
+                                        <li>Perfect for property investment platforms</li>
+                                    </ul>
+                                </div>
+                                
+                                <h6><i class="fas fa-code me-2"></i>Technical Setup:</h6>
+                                <div class="bg-light p-3 rounded">
+                                    <code>export GOOGLE_MAPS_API_KEY="your_api_key_here"</code><br>
+                                    <small class="text-muted">Then restart the platform</small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="btn btn-primary">
+                                    <i class="fas fa-external-link-alt me-1"></i>Get API Key Now
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if present
+            $('#apiInstructionsModal').remove();
+            
+            // Add modal to body and show it
+            $('body').append(instructions);
+            $('#apiInstructionsModal').modal('show');
+        }
+    </script>
+</body>
+</html>

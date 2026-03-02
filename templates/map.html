@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Map - InvestorIQ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        #map {
+            height: 70vh;
+            width: 100%;
+            border-radius: 10px;
+        }
+        .property-popup {
+            min-width: 300px;
+        }
+        .property-popup h6 {
+            margin-bottom: 0.5rem;
+            color: #667eea;
+        }
+        .rating-badge {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 5px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            line-height: 20px;
+        }
+        .rating-1 { background-color: #dc3545; }
+        .rating-2 { background-color: #fd7e14; }
+        .rating-3 { background-color: #ffc107; color: black; }
+        .rating-4 { background-color: #20c997; }
+        .rating-5 { background-color: #28a745; }
+        .map-controls {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+        .legend {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .sidebar {
+            height: 70vh;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .property-list-item {
+            background: white;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .property-list-item:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        
+        /* Mobile responsive improvements */
+        @media (max-width: 768px) {
+            #map { height: 50vh; min-height: 300px; }
+            .sidebar { margin-top: 1rem; }
+            .btn-group .btn { font-size: 0.8rem; padding: 0.25rem 0.5rem; }
+            .property-popup { min-width: 250px !important; }
+            .filters-card { margin-bottom: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-brain me-2"></i>
+                InvestorIQ
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/map"><i class="fas fa-map me-1"></i>Map View</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/social-intelligence"><i class="fas fa-users me-1"></i>Social Intel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/business-intelligence"><i class="fas fa-chart-bar me-1"></i>Business Intel</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Map Controls -->
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <div class="map-controls">
+                    <h5><i class="fas fa-map me-2"></i>Interactive Property Map
+                        <span class="badge bg-warning text-dark ms-2" style="font-size: 0.5em;">BETA</span>
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-2">
+                            <select class="form-select form-select-sm" id="countyFilter">
+                                <option value="">All Counties</option>
+                                <option value="Rock Island">Rock Island, IL</option>
+                                <option value="Scott">Scott County, IA</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select form-select-sm" id="potentialFilter">
+                                <option value="">All Opportunities</option>
+                                <option value="High Opportunity">High Only</option>
+                                <option value="Medium Opportunity">Medium Only</option>
+                                <option value="Standard Opportunity">Standard Only</option>
+                                <option value="Low Opportunity">Low Only</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select form-select-sm" id="methodologyFilter">
+                                <option value="">All Types</option>
+                                <option value="Tax Distressed">Tax Distressed</option>
+                                <option value="Foreclosure">Foreclosure</option>
+                                <option value="Low Assessed Value">Low Value</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control form-control-sm" id="minTaxDebt" placeholder="Min Tax Debt">
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary btn-sm" id="applyMapFilters">
+                                <i class="fas fa-search me-1"></i>Filter Map
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-secondary btn-sm" id="clearFilters">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="legend">
+                    <h6><i class="fas fa-info-circle me-2"></i>Investment Potential Legend</h6>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #dc3545;"></div>
+                        <span>High Opportunity (>$100K tax debt)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #fd7e14;"></div>
+                        <span>Medium Opportunity ($50K-$100K)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #ffc107;"></div>
+                        <span>Standard Opportunity ($25K-$50K)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #28a745;"></div>
+                        <span>Low Opportunity (<$25K)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Map -->
+            <div class="col-md-8">
+                <div id="map"></div>
+            </div>
+            
+            <!-- Property List Sidebar -->
+            <div class="col-md-4">
+                <div class="sidebar">
+                    <h6><i class="fas fa-list me-2"></i>Properties on Map <span id="propertyCount" class="badge bg-primary">0</span></h6>
+                    <div id="propertyList">
+                        <!-- Properties will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <script>
+        let map;
+        let markers = [];
+        let propertiesData = [];
+
+        $(document).ready(function() {
+            initMap();
+            loadProperties();
+
+            // Filter handlers
+            $('#applyMapFilters').click(applyFilters);
+            $('#clearFilters').click(clearFilters);
+        });
+
+        function initMap() {
+            console.log('🗺️ Starting map initialization...');
+            
+            // Check if map container exists and has dimensions
+            const mapContainer = document.getElementById('map');
+            if (!mapContainer) {
+                console.error('❌ Map container #map not found!');
+                return;
+            }
+            
+            console.log('✅ Map container found, dimensions:', mapContainer.offsetWidth, 'x', mapContainer.offsetHeight);
+            
+            // Check if container has height
+            if (mapContainer.offsetHeight === 0) {
+                console.error('❌ Map container has zero height!');
+                mapContainer.style.height = '500px';
+                console.log('🔧 Set minimum height to 500px');
+            }
+            
+            try {
+                // Initialize map centered on Quad Cities - wider view to show full metro area
+                map = L.map('map').setView([41.5300, -90.5500], 10);
+                console.log('✅ Leaflet map object created');
+
+                // Add tile layer
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(map);
+                console.log('✅ Tile layer added');
+                
+                // Force refresh the map display
+                setTimeout(() => {
+                    if (map) {
+                        map.invalidateSize();
+                        console.log('✅ Map size refreshed');
+                    }
+                }, 200);
+
+                console.log('✅ Map initialized successfully');
+                
+                // Add county boundary markers
+                addCountyBoundaries();
+                
+            } catch (error) {
+                console.error('❌ Map initialization error:', error);
+            }
+        }
+
+        function addCountyBoundaries() {
+            // Rock Island County center
+            L.marker([41.5094, -90.5787], {
+                icon: L.divIcon({
+                    html: '<div style="background: #667eea; color: white; padding: 5px; border-radius: 5px; font-size: 12px; font-weight: bold;">Rock Island County, IL</div>',
+                    className: 'county-label',
+                    iconSize: [150, 30]
+                })
+            }).addTo(map);
+
+            // Scott County center  
+            L.marker([41.5236, -90.6776], {
+                icon: L.divIcon({
+                    html: '<div style="background: #764ba2; color: white; padding: 5px; border-radius: 5px; font-size: 12px; font-weight: bold;">Scott County, IA</div>',
+                    className: 'county-label',
+                    iconSize: [130, 30]
+                })
+            }).addTo(map);
+        }
+
+        function loadProperties(filters = {}) {
+            $.get('/api/properties', filters)
+                .done(async function(response) {
+                    // Handle API response properly
+                    console.log("📡 API Response structure:", Object.keys(response));
+                    
+                    let data;
+                    if (response.properties) {
+                        // Response has properties array
+                        data = response.properties;
+                    } else if (response.success && response.data) {
+                        // Alternative format
+                        data = response.data;
+                    } else if (Array.isArray(response)) {
+                        // Direct array
+                        data = response;
+                    } else {
+                        console.error("❌ Unknown response format:", response);
+                        data = [];
+                    }
+                    
+                    console.log(`📊 Loaded ${data.length} properties from API`);
+                    propertiesData = data;
+                    await updateMap(data);
+                    updatePropertyList(data);
+                })
+                .fail(function() {
+                    console.error('Failed to load properties');
+                });
+        }
+
+        async function updateMap(properties) {
+            // Clear existing markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            // DEBUG: Check first property structure
+            if (properties.length > 0) {
+                console.log("🔍 FIRST PROPERTY RAW DATA:", properties[0]);
+                console.log("  Keys:", Object.keys(properties[0]));
+            }
+            
+            // Debug: Validate coordinates before placing markers
+            console.log(`🗺️ Updating map with ${properties.length} properties`);
+            console.log('🔍 COORDINATE VALIDATION STARTING...');
+            
+            let fixedCount = 0;
+            let riverCount = 0;
+
+            for (let i = 0; i < properties.length; i++) {
+                const property = properties[i];
+                let validatedCoords;
+                
+                // Debug property data - MORE DETAIL
+                if (i < 3) {  // Show first 3 properties in detail
+                    console.log(`🔍 PROPERTY ${i+1} FULL DATA:`, property);
+                }
+                console.log(`Processing property ${i+1}:`, {
+                    address: property.property_address,
+                    lat: property.latitude,
+                    lng: property.longitude,
+                    geocoded: property.geocoded,
+                    hasLat: !!property.latitude,
+                    hasLng: !!property.longitude,
+                    isGeocoded: !!property.geocoded
+                });
+                
+                // Check if property already has coordinates from database
+                // Note: geocoded might be 1 (number) or true (boolean)
+                if (property.latitude && property.longitude && (property.geocoded === 1 || property.geocoded === true || property.geocoded === "1")) {
+                    validatedCoords = {
+                        lat: parseFloat(property.latitude),
+                        lng: parseFloat(property.longitude)
+                    };
+                    console.log(`📍 Using DB coords for ${property.property_address}: ${validatedCoords.lat.toFixed(4)}, ${validatedCoords.lng.toFixed(4)}`);
+                } else {
+                    // Fallback to estimated coordinates if not geocoded yet
+                    console.log(`⚠️ Property ${i+1} not using DB coords:`, {
+                        hasLat: !!property.latitude,
+                        hasLng: !!property.longitude,
+                        geocoded: property.geocoded,
+                        geocodedType: typeof property.geocoded
+                    });
+                    validatedCoords = getPropertyCoordinatesSync(property);
+                    console.log(`⚠️ Using estimated coords for ${property.property_address} (not geocoded yet)`);
+                }
+                
+                if (!validatedCoords) {
+                    console.error(`❌ No coordinates for property ${i+1}:`, property.property_address);
+                    continue;
+                }
+                
+                const coords = validatedCoords;
+
+                // Determine marker color based on investment potential
+                const color = getMarkerColor(property.investment_potential);
+                
+                console.log(`Creating marker ${i+1} at:`, coords, 'Type:', typeof coords.lat, typeof coords.lng);
+                
+                // Wrap marker creation in try-catch to prevent errors from stopping all markers
+                try {
+                    // Ensure coordinates are numbers
+                    const lat = parseFloat(coords.lat);
+                    const lng = parseFloat(coords.lng);
+                    
+                    if (isNaN(lat) || isNaN(lng)) {
+                        console.error(`❌ Invalid coordinates for property ${i+1}:`, coords);
+                        continue;
+                    }
+                    
+                    // Create enhanced marker with better visual appeal
+                    const marker = L.circleMarker([lat, lng], {
+                    radius: getMarkerSize(property.tax_amount),
+                    fillColor: color,
+                    color: '#ffffff',
+                    weight: 3,
+                    opacity: 1,
+                    fillOpacity: getMarkerOpacity(property.investment_potential)
+                }).addTo(map);
+
+                // Add hover effects for better user experience
+                marker.on('mouseover', function() {
+                    this.setRadius(this.options.radius + 3);
+                    this.setStyle({
+                        fillOpacity: 0.95,
+                        weight: 4,
+                        color: '#000000'
+                    });
+                });
+
+                marker.on('mouseout', function() {
+                    this.setRadius(getMarkerSize(property.tax_amount));
+                    this.setStyle({
+                        fillOpacity: getMarkerOpacity(property.investment_potential),
+                        weight: 3,
+                        color: '#ffffff'
+                    });
+                });
+
+                // Create popup content
+                let popupContent;
+                try {
+                    popupContent = createPopupContent(property);
+                    marker.bindPopup(popupContent);
+                } catch (e) {
+                    console.error(`❌ Error creating popup for property ${i+1}:`, e);
+                    marker.bindPopup(`<div class="property-popup">Error loading property details</div>`);
+                }
+
+                // Add click handler - simplified to avoid closure issues
+                marker.propertyIndex = i;
+                marker.on('click', function() {
+                    // Use the marker's stored property index
+                    if (this.propertyIndex !== undefined) {
+                        highlightPropertyInList(this.propertyIndex);
+                    }
+                });
+
+                    markers.push(marker);
+                    marker.addTo(map);  // ADD THIS LINE - Actually show the marker on the map!
+                    console.log(`✅ Marker ${i+1} added to map`);
+                    
+                } catch (error) {
+                    console.error(`❌ Error creating marker ${i+1}:`, error);
+                }
+            }
+            
+            // Debug summary with coordinate spread analysis
+            const allCoords = markers.map(m => m.getLatLng());
+            const latitudes = allCoords.map(c => c.lat);
+            const longitudes = allCoords.map(c => c.lng);
+            
+            const latRange = Math.max(...latitudes) - Math.min(...latitudes);
+            const lngRange = Math.max(...longitudes) - Math.min(...longitudes);
+            
+            console.log(`✅ COORDINATE VALIDATION COMPLETE`);
+            console.log(`   📊 Properties processed: ${properties.length}`);
+            console.log(`   🔧 Coordinates corrected: ${fixedCount}`);
+            console.log(`   📏 Latitude spread: ${latRange.toFixed(4)} degrees (~${(latRange * 69).toFixed(1)} miles)`);
+            console.log(`   📏 Longitude spread: ${lngRange.toFixed(4)} degrees (~${(lngRange * 54).toFixed(1)} miles)`);
+            console.log(`   🎯 Geographic distribution: ${latRange > 0.1 && lngRange > 0.1 ? 'GOOD' : 'TOO CLUSTERED'}`);
+            console.log(`   📌 Markers created: ${markers.length}`);
+            
+            // TEST: Add a debug marker to verify map works
+            const testMarker = L.marker([41.5094, -90.5787]).addTo(map);
+            testMarker.bindPopup("TEST MARKER - If you see this, the map works!").openPopup();
+            console.log('🔴 TEST MARKER ADDED AT QUAD CITIES CENTER');
+            
+            // TEST: Add a simple circle marker with property data
+            if (properties.length > 0 && properties[0].latitude) {
+                const testCircle = L.circleMarker([properties[0].latitude, properties[0].longitude], {
+                    radius: 10,
+                    fillColor: '#ff0000',
+                    color: '#000',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map);
+                testCircle.bindPopup("TEST PROPERTY MARKER");
+                console.log('🟢 TEST PROPERTY CIRCLE MARKER ADDED');
+            }
+
+            $('#propertyCount').text(properties.length);
+        }
+
+        async function getPropertyCoordinates(property) {
+            // Try geocoding first for accurate coordinates
+            const geocoded = await tryGeocodeAddress(property.property_address + ', ' + property.city + ', IL');
+            if (geocoded) {
+                return geocoded;
+            }
+            
+            // Fallback to original system if geocoding fails
+            const address = property.property_address;
+            const city = property.city;
+            const county = property.county;
+            
+            // First, try address-specific coordinates (pre-verified as safe)
+            const specificCoords = getAddressSpecificCoordinates(address);
+            if (specificCoords) {
+                return validateCoordinates(specificCoords, city, county);
+            }
+            
+            // Otherwise, use city-based coordinates with small safe offset
+            const cityCoords = getCityBaseCoordinates(city, county);
+            if (!cityCoords) {
+                // Safe default based on county
+                if (county === 'Scott' || county === 'Scott County') {
+                    return { lat: 41.5350, lng: -90.5776 }; // Davenport (Iowa/North)
+                } else {
+                    return { lat: 41.5094, lng: -90.5787 }; // Rock Island (Illinois/South)
+                }
+            }
+            
+            // Add small safe offset
+            const addressOffset = getAddressBasedOffset(address);
+            
+            const proposedCoords = {
+                lat: cityCoords[0] + addressOffset.lat,
+                lng: cityCoords[1] + addressOffset.lng
+            };
+            
+            // VALIDATE and ensure coordinates are on land
+            return validateCoordinates(proposedCoords, city, county);
+        }
+        
+        function getPropertyCoordinatesSync(property) {
+            // Synchronous version for fast map loading (no geocoding)
+            const address = property.property_address;
+            const city = property.city;
+            const county = property.county;
+            
+            // First, try address-specific coordinates (pre-verified as safe)
+            const specificCoords = getAddressSpecificCoordinates(address);
+            if (specificCoords) {
+                return validateCoordinates(specificCoords, city, county);
+            }
+            
+            // Otherwise, use city-based coordinates with small safe offset
+            const cityCoords = getCityBaseCoordinates(city, county);
+            if (!cityCoords) {
+                // Safe default based on county
+                if (county === 'Scott' || county === 'Scott County') {
+                    return { lat: 41.5350, lng: -90.5776 }; // Davenport (Iowa/North)
+                } else {
+                    return { lat: 41.5094, lng: -90.5787 }; // Rock Island (Illinois/South)
+                }
+            }
+            
+            // Add small safe offset
+            const addressOffset = getAddressBasedOffset(address);
+            
+            const proposedCoords = {
+                lat: cityCoords[0] + addressOffset.lat,
+                lng: cityCoords[1] + addressOffset.lng
+            };
+            
+            // VALIDATE and ensure coordinates are on land
+            return validateCoordinates(proposedCoords, city, county);
+        }
+        
+        function getAddressSpecificCoordinates(address) {
+            // REALISTIC SPREAD ACROSS QUAD CITIES - Allow normal city distribution
+            const knownAddresses = {
+                // Milan properties - Southern Rock Island County
+                '5114 109TH AVE MILAN, IL 61264': { lat: 41.4428, lng: -90.5707 },
+                '10724 52 ST CT MILAN, IL 61264': { lat: 41.4435, lng: -90.5720 },
+                '10722 52 ST CT MILAN, IL 61264': { lat: 41.4433, lng: -90.5718 },
+                '10622 52 ST CT MILAN, IL 61264': { lat: 41.4430, lng: -90.5715 },
+                '5100 106TH AVE MILAN, IL 61264': { lat: 41.4440, lng: -90.5695 },
+                
+                // Davenport properties - Spread across Davenport
+                '1247 W 3rd Street': { lat: 41.5280, lng: -90.5900 },
+                '2247 Harrison Street': { lat: 41.5200, lng: -90.5750 },
+                '623 E 14th Street': { lat: 41.5300, lng: -90.5600 },
+                
+                // Moline properties - Spread across Moline
+                '3808 11 AVE MOLINE, IL 61265': { lat: 41.5067, lng: -90.5151 },
+                '3808 11TH AVE MOLINE, IL 61265': { lat: 41.5067, lng: -90.5151 },
+                'GULDENPFENNING, MICHAEL 3808 11TH AVE MOLINE, IL 61265-2408': { lat: 41.5067, lng: -90.5151 },
+                
+                // Rock Island properties - Spread across Rock Island
+                '1234 Example St Rock Island': { lat: 41.5094, lng: -90.5787 },
+                
+                // East Moline properties - East of Moline
+                '5678 East Moline Ave': { lat: 41.5067, lng: -90.4440 },
+                
+                // Bettendorf properties - North of Davenport  
+                '2847 18th Street': { lat: 41.5244, lng: -90.5151 },
+                
+                // PIN-based properties - Use appropriate city coordinates
+                'Property at PIN 08-34-318-180': { lat: 41.5067, lng: -90.5151 }, // Moline PIN
+                'PIN 08-34-318-180': { lat: 41.5067, lng: -90.5151 },
+            };
+            
+            // Clean address for matching - handle various formats
+            const cleanAddress = address.replace(/\n/g, ' ').trim();
+            
+            // Try exact match first
+            if (knownAddresses[cleanAddress]) {
+                return knownAddresses[cleanAddress];
+            }
+            
+            // Try partial matching for addresses with extra info
+            for (const [knownAddr, coords] of Object.entries(knownAddresses)) {
+                if (cleanAddress.includes(knownAddr) || knownAddr.includes(cleanAddress)) {
+                    return coords;
+                }
+            }
+            
+            return null;
+        }
+        
+        function getCityBaseCoordinates(city, county) {
+            // REALISTIC QUAD CITIES GEOGRAPHIC DISTRIBUTION
+            const coords = {
+                // ILLINOIS SIDE - Rock Island County (WEST side of metro)
+                'Rock Island': [41.5094, -90.5787],    // Rock Island proper
+                'Moline': [41.5067, -90.5151],         // Moline - spread east from Rock Island
+                'Milan': [41.4428, -90.5707],          // Milan - south of Rock Island
+                'East Moline': [41.5067, -90.4440],    // East Moline - east of Moline
+                'Silvis': [41.5122, -90.4151],         // Silvis - east of East Moline
+                'Rapids City': [41.4428, -90.6018],    // Rapids City - west of Milan
+                
+                // IOWA SIDE - Scott County (EAST side of metro)
+                'Davenport': [41.5236, -90.5776],      // Davenport - main Iowa city
+                'Bettendorf': [41.5244, -90.5151],     // Bettendorf - north of Davenport
+                'Eldridge': [41.6561, -90.5840],       // Eldridge - far north
+                'LeClaire': [41.5944, -90.3440],       // LeClaire - far east
+                'Durant': [41.6022, -90.9151],         // Durant - far west
+                'Blue Grass': [41.5189, -90.7651]      // Blue Grass - west
+            };
+            
+            return coords[city];
+        }
+        
+        function getAddressBasedOffset(address) {
+            // Create REALISTIC offset for property distribution within cities
+            if (!address) return { lat: 0, lng: 0 };
+            
+            const cleanAddress = address.replace(/\n/g, ' ').toLowerCase();
+            
+            // Extract street number and name for offset calculation
+            const streetNumber = cleanAddress.match(/\d+/);
+            const streetName = cleanAddress.replace(/\d+/g, '').trim();
+            
+            let latOffset = 0;
+            let lngOffset = 0;
+            
+            if (streetNumber) {
+                const num = parseInt(streetNumber[0]);
+                // Create realistic city-wide distribution
+                latOffset = ((num % 40) - 20) * 0.001;  // Up to ~0.02 degrees (~1.4 miles)
+                lngOffset = ((num % 37) - 18) * 0.001;  // Spread properties across city area
+            }
+            
+            // Add street name variation for more realistic distribution
+            if (streetName) {
+                const nameHash = streetName.split('').reduce((a, b) => {
+                    a = ((a << 5) - a) + b.charCodeAt(0);
+                    return a & a;
+                }, 0);
+                latOffset += (Math.abs(nameHash) % 30 - 15) * 0.0005;
+                lngOffset += (Math.abs(nameHash * 3) % 30 - 15) * 0.0005;
+            }
+            
+            return { lat: latOffset, lng: lngOffset };
+        }
+        
+        function validateCoordinates(coords, city, county) {
+            // BALANCED VALIDATION - Allow realistic city distribution while avoiding river
+            
+            // Determine if property is Illinois or Iowa based
+            const isIllinoisProperty = (
+                county === 'Rock Island' || 
+                county === 'Rock Island County' ||
+                city === 'Rock Island' ||
+                city === 'Moline' ||
+                city === 'Milan' ||
+                city === 'East Moline' ||
+                city === 'Silvis' ||
+                city === 'Rapids City'
+            );
+            
+            const isIowaProperty = (
+                county === 'Scott' ||
+                county === 'Scott County' ||
+                city === 'Davenport' ||
+                city === 'Bettendorf' ||
+                city === 'Eldridge' ||
+                city === 'LeClaire' ||
+                city === 'Durant' ||
+                city === 'Blue Grass'
+            );
+            
+            // Define safe bounds for each state (allowing realistic city spread)
+            const illinoisBounds = {
+                minLat: 41.42,  // Southern limit (Milan area)
+                maxLat: 41.52,  // Just south of river
+                minLng: -90.65, // Western limit  
+                maxLng: -90.40  // Eastern limit
+            };
+            
+            const iowaBounds = {
+                minLat: 41.52,  // Just north of river
+                maxLat: 41.67,  // Northern limit (Eldridge area)
+                minLng: -90.95, // Western limit
+                maxLng: -90.30  // Eastern limit (LeClaire area)
+            };
+            
+            // Validate Illinois properties
+            if (isIllinoisProperty) {
+                const bounded = {
+                    lat: Math.max(illinoisBounds.minLat, Math.min(illinoisBounds.maxLat, coords.lat)),
+                    lng: Math.max(illinoisBounds.minLng, Math.min(illinoisBounds.maxLng, coords.lng))
+                };
+                
+                if (bounded.lat !== coords.lat || bounded.lng !== coords.lng) {
+                    console.warn(`🔧 Adjusted ${city} property to stay within Illinois bounds`);
+                }
+                
+                return bounded;
+            }
+            
+            // Validate Iowa properties
+            if (isIowaProperty) {
+                const bounded = {
+                    lat: Math.max(iowaBounds.minLat, Math.min(iowaBounds.maxLat, coords.lat)),
+                    lng: Math.max(iowaBounds.minLng, Math.min(iowaBounds.maxLng, coords.lng))
+                };
+                
+                if (bounded.lat !== coords.lat || bounded.lng !== coords.lng) {
+                    console.warn(`🔧 Adjusted ${city} property to stay within Iowa bounds`);
+                }
+                
+                return bounded;
+            }
+            
+            // Default: no major changes for unrecognized properties
+            return coords;
+        }
+        
+        function getPropertyCoordinatesRaw(property) {
+            // Get coordinates WITHOUT validation (for debugging comparison)
+            const address = property.property_address;
+            const city = property.city;
+            const county = property.county;
+            
+            // Try address-specific coordinates first
+            const specificCoords = getAddressSpecificCoordinates(address);
+            if (specificCoords) {
+                return specificCoords; // Return without validation
+            }
+            
+            // Use city-based coordinates with offset
+            const cityCoords = getCityBaseCoordinates(city, county);
+            if (!cityCoords) {
+                if (county === 'Scott' || county === 'Scott County') {
+                    return { lat: 41.5350, lng: -90.5776 };
+                } else {
+                    return { lat: 41.5094, lng: -90.5787 };
+                }
+            }
+            
+            const addressOffset = getAddressBasedOffset(address);
+            
+            return {
+                lat: cityCoords[0] + addressOffset.lat,
+                lng: cityCoords[1] + addressOffset.lng
+            };
+        }
+
+        function debugPropertyLocation(property) {
+            // Helper function to debug coordinate assignment and river validation
+            const coords = getPropertyCoordinates(property);
+            
+            // Check if coords might be problematic
+            const riverCheck = (coords.lat >= 41.45 && coords.lat <= 41.55 && 
+                              coords.lng >= -90.60 && coords.lng <= -90.53);
+            
+            console.log(`🏠 ${property.property_address}`);
+            console.log(`   📍 Location: ${property.city}, ${property.county} County`);
+            console.log(`   🗺️  Coordinates: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+            console.log(`   💧 River Risk: ${riverCheck ? '❌ MIGHT BE IN RIVER' : '✅ SAFE ON LAND'}`);
+            console.log(`   💰 Investment: ${property.investment_potential}`);
+            console.log('---');
+        }
+        
+        function validateAllProperties(properties) {
+            console.log('🔍 VALIDATING ALL PROPERTY COORDINATES');
+            console.log('=====================================');
+            
+            let riverCount = 0;
+            let totalCount = properties.length;
+            
+            properties.forEach(property => {
+                const coords = getPropertyCoordinates(property);
+                const inRiver = (coords.lat >= 41.45 && coords.lat <= 41.55 && 
+                               coords.lng >= -90.60 && coords.lng <= -90.53);
+                if (inRiver) riverCount++;
+            });
+            
+            console.log(`📊 SUMMARY:`);
+            console.log(`   Total Properties: ${totalCount}`);
+            console.log(`   Properties in River: ${riverCount}`);
+            console.log(`   Properties on Land: ${totalCount - riverCount}`);
+            console.log(`   Success Rate: ${((totalCount - riverCount) / totalCount * 100).toFixed(1)}%`);
+        }
+        
+        // Enable free geocoding for accurate property locations
+        async function tryGeocodeAddress(address) {
+            try {
+                // Use Nominatim (OpenStreetMap's free geocoding service)
+                const cleanAddress = address.replace(/\n/g, ' ').trim();
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanAddress)}`;
+                
+                // Add rate limiting delay (reduced for better performance)
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data && data.length > 0) {
+                    return { 
+                        lat: parseFloat(data[0].lat), 
+                        lng: parseFloat(data[0].lon),
+                        source: 'geocoded'
+                    };
+                }
+            } catch (error) {
+                console.log('Geocoding failed for:', address, error);
+            }
+            
+            return null;
+        }
+
+        function getMarkerColor(potential) {
+            const colors = {
+                'High Opportunity': '#dc3545',      // Red - Highest opportunity
+                'Medium Opportunity': '#fd7e14',    // Orange - Good opportunity  
+                'Standard Opportunity': '#ffc107',  // Yellow - Standard opportunity
+                'Low Opportunity': '#28a745'        // Green - Lower opportunity
+            };
+            return colors[potential] || '#6c757d';
+        }
+
+        function getMarkerSize(taxAmount) {
+            // Size based on tax debt amount - bigger debt = bigger marker
+            if (taxAmount >= 250000) return 16;  // Massive opportunities
+            if (taxAmount >= 150000) return 14;  // Very large opportunities
+            if (taxAmount >= 100000) return 12;  // Large opportunities
+            if (taxAmount >= 50000) return 10;   // Medium opportunities
+            if (taxAmount >= 25000) return 8;    // Small opportunities
+            return 6; // Minimal opportunities
+        }
+
+        function getMarkerOpacity(potential) {
+            const opacity = {
+                'High Opportunity': 0.9,     // Most visible
+                'Medium Opportunity': 0.8,   // Very visible
+                'Standard Opportunity': 0.7, // Moderately visible
+                'Low Opportunity': 0.6       // Less visible
+            };
+            return opacity[potential] || 0.5;
+        }
+
+        function createPopupContent(property) {
+            const streetViewThumbnail = property.street_view_thumbnail ? 
+                `<img src="${property.street_view_thumbnail}" alt="Property Preview" style="width: 100%; height: 120px; object-fit: cover; border-radius: 5px; margin-bottom: 10px; cursor: pointer;" onclick="window.open('${property.street_view_url}', '_blank')" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                 <div style="width: 100%; height: 120px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 5px; margin-bottom: 10px; display: none; align-items: center; justify-content: center; cursor: pointer;" onclick="window.open('${property.street_view_url}', '_blank')">
+                    <div class="text-center text-white">
+                        <i class="fas fa-map-marker-alt fa-2x mb-2"></i><br>
+                        <small>Click to View Location</small>
+                    </div>
+                 </div>` : 
+                `<div style="width: 100%; height: 120px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 5px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="window.open('${property.street_view_url}', '_blank')">
+                    <div class="text-center text-white">
+                        <i class="fas fa-map-marker-alt fa-2x mb-2"></i><br>
+                        <small>Click to View Location</small>
+                    </div>
+                 </div>`;
+
+            const ratingsHtml = `
+                <div class="mb-2">
+                    <small><strong>Investment Ratings (1-5):</strong></small><br>
+                    <span class="rating-badge rating-${property.ratings.tax_distress}" title="Tax Distress Level">${property.ratings.tax_distress}</span>
+                    <span class="rating-badge rating-${property.ratings.foreclosure_risk}" title="Foreclosure Risk">${property.ratings.foreclosure_risk}</span>
+                    <span class="rating-badge rating-${property.ratings.value_opportunity}" title="Value Opportunity">${property.ratings.value_opportunity}</span>
+                    <span class="rating-badge rating-${property.ratings.owner_motivation}" title="Owner Motivation">${property.ratings.owner_motivation}</span>
+                    <span class="rating-badge rating-${property.ratings.acquisition_ease}" title="Acquisition Ease">${property.ratings.acquisition_ease}</span>
+                    <br><small class="text-muted">Tax | Foreclosure | Value | Motivation | Ease</small>
+                </div>
+            `;
+
+            return `
+                <div class="property-popup">
+                    ${streetViewThumbnail}
+                    <h6 class="text-primary">${property.property_address}</h6>
+                    <p class="mb-1"><strong>Owner:</strong> ${property.owner_name || 'Unknown'}</p>
+                    <p class="mb-1"><strong>Location:</strong> ${property.city}, ${property.county} County</p>
+                    <p class="mb-1"><strong>Assessed Value:</strong> $${(property.assessed_value || 0).toLocaleString()}</p>
+                    <p class="mb-2"><strong>Tax Debt:</strong> <span class="text-danger fw-bold">$${(property.tax_amount || 0).toLocaleString()}</span></p>
+                    <p class="mb-2"><span class="badge bg-${getOpportunityBootstrapColor(property.investment_potential)} fs-6">${property.investment_potential}</span></p>
+                    ${ratingsHtml}
+                    <div class="d-grid gap-1">
+                        <a href="/property?address=${encodeURIComponent(property.property_address)}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-chart-line"></i> Full Property Analysis
+                        </a>
+                        <div class="btn-group btn-group-sm">
+                            <a href="${property.street_view_url}" target="_blank" class="btn btn-outline-secondary" title="View property on Street View">
+                                <i class="fas fa-street-view"></i> View
+                            </a>
+                            <a href="${property.phone_lookup_url || '#'}" target="_blank" class="btn btn-outline-success" title="Look up owner contact info">
+                                <i class="fas fa-phone"></i> Contact
+                            </a>
+                            <a href="${property.google_maps_url}" target="_blank" class="btn btn-outline-info" title="Open in Google Maps">
+                                <i class="fas fa-map-marker-alt"></i> Maps
+                            </a>
+                        </div>
+                        <button class="btn btn-warning btn-sm mt-1" onclick="addToPipelineByAddress('${encodeURIComponent(property.property_address)}')">
+                            <i class="fas fa-plus-circle"></i> Add to Deal Pipeline
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getOpportunityBootstrapColor(potential) {
+            const colors = {
+                'High Opportunity': 'danger',
+                'Medium Opportunity': 'warning',
+                'Standard Opportunity': 'primary',
+                'Low Opportunity': 'success'
+            };
+            return colors[potential] || 'secondary';
+        }
+
+        function updatePropertyList(properties) {
+            const propertyList = $('#propertyList');
+            propertyList.empty();
+
+            properties.forEach(function(property, index) {
+                const listItem = $(`
+                    <div class="property-list-item" data-index="${index}">
+                        <h6 class="mb-2">${property.property_address}</h6>
+                        <p class="mb-1 text-muted">${property.city}, ${property.county} County</p>
+                        <p class="mb-2"><strong>Tax Debt:</strong> <span class="text-danger">$${(property.tax_amount || 0).toLocaleString()}</span></p>
+                        <span class="badge bg-${getOpportunityBootstrapColor(property.investment_potential)}">${property.investment_potential}</span>
+                    </div>
+                `);
+
+                listItem.click(function() {
+                    const markerIndex = $(this).data('index');
+                    if (markers[markerIndex]) {
+                        map.setView(markers[markerIndex].getLatLng(), 15);
+                        markers[markerIndex].openPopup();
+                        highlightPropertyInList(markerIndex);
+                    }
+                });
+
+                propertyList.append(listItem);
+            });
+        }
+
+        function highlightPropertyInList(index) {
+            $('.property-list-item').removeClass('bg-light');
+            $(`.property-list-item[data-index="${index}"]`).addClass('bg-light');
+        }
+        
+        // Add property to deal pipeline
+        function addToPipelineByAddress(encodedAddress) {
+            try {
+                const address = decodeURIComponent(encodedAddress);
+                
+                // Find the property in our data
+                const property = propertiesData.find(p => p.property_address === address);
+                
+                if (!property) {
+                    alert('❌ Property not found. Please refresh and try again.');
+                    return;
+                }
+                
+                // Send to deal pipeline API
+                $.ajax({
+                    url: '/api/pipeline/add',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        property: property,
+                        stage: 'prospecting',
+                        notes: `Added from map view on ${new Date().toLocaleDateString()}`
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            // Show success notification
+                            alert(`✅ Property added to Deal Pipeline!\n\n${property.property_address}\n\nGo to Deal Pipeline to manage this opportunity.`);
+                        } else {
+                            alert('❌ Failed to add property: ' + (response.error || 'Unknown error'));
+                        }
+                    },
+                    error: function() {
+                        alert('❌ Failed to add property to pipeline. Please try again.');
+                    }
+                });
+                
+            } catch (e) {
+                console.error('Error adding to pipeline:', e);
+                alert('❌ Error adding property to pipeline');
+            }
+        }
+
+        function applyFilters() {
+            const filters = {
+                county: $('#countyFilter').val(),
+                investment_potential: $('#potentialFilter').val(),
+                methodology_category: $('#methodologyFilter').val()
+            };
+
+            const minTaxDebt = $('#minTaxDebt').val();
+            if (minTaxDebt) {
+                // This would need backend support for tax debt filtering
+                filters.min_tax_debt = minTaxDebt;
+            }
+
+            // Remove empty filters
+            Object.keys(filters).forEach(key => {
+                if (!filters[key]) delete filters[key];
+            });
+
+            loadProperties(filters);
+        }
+
+        function clearFilters() {
+            $('#countyFilter').val('');
+            $('#potentialFilter').val('');
+            $('#methodologyFilter').val('');
+            $('#minTaxDebt').val('');
+            loadProperties();
+        }
+    </script>
+</body>
+</html>

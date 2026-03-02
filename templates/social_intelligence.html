@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Intelligence - InvestorIQ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        .intelligence-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        .intel-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: transform 0.2s;
+        }
+        .intel-card:hover {
+            transform: translateY(-5px);
+        }
+        .professional-card {
+            border-left: 4px solid #28a745;
+        }
+        .investor-card {
+            border-left: 4px solid #dc3545;
+        }
+        .network-card {
+            border-left: 4px solid #667eea;
+        }
+        .platform-badge {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.6rem;
+        }
+        .social-stats {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .connection-strength {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .connection-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
+            transition: width 0.3s ease;
+        }
+        .search-section {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .intel-filter {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        .specialty-tab {
+            cursor: pointer !important;
+            border: 1px solid #dee2e6 !important;
+            transition: all 0.2s ease !important;
+            font-size: 0.85rem !important;
+            padding: 0.4rem 0.8rem !important;
+            margin: 0.2rem !important;
+            border-radius: 15px !important;
+        }
+        .specialty-tab:hover {
+            background-color: #e9ecef !important;
+            color: #495057 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+        .specialty-content {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-brain me-2"></i>
+                InvestorIQ
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/map"><i class="fas fa-map me-1"></i>Map View</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/social-intelligence"><i class="fas fa-users me-1"></i>Social Intel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/business-intelligence"><i class="fas fa-chart-bar me-1"></i>Business Intel</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <section class="intelligence-header text-center">
+        <div class="container">
+            <h1><i class="fas fa-users me-3"></i>Social Media Intelligence Network
+                <span class="badge bg-warning text-dark ms-2" style="font-size: 0.4em;">BETA</span>
+            </h1>
+            <p class="lead">Real Estate Professionals & Investor Network Analysis</p>
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <h3 class="mb-0" id="totalProfessionals">Loading...</h3>
+                    <small>Real Estate Professionals</small>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="mb-0" id="totalInvestors">Loading...</h3>
+                    <small>Active Investors</small>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="mb-0" id="totalConnections">Loading...</h3>
+                    <small>Network Connections</small>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="mb-0" id="mlsAccess">Loading...</h3>
+                    <small>MLS Access Contacts</small>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container mt-4">
+        <!-- Search and Filters -->
+        <div class="search-section">
+            <h5><i class="fas fa-search me-2"></i>Network Search & Discovery</h5>
+            <div class="row">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search professionals...">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="platformFilter">
+                        <option value="">All Platforms</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="linkedin">LinkedIn</option>
+                        <option value="instagram">Instagram</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="typeFilter">
+                        <option value="">All Types</option>
+                        <option value="agent">Real Estate Agent</option>
+                        <option value="broker">Broker</option>
+                        <option value="investor">Investor</option>
+                        <option value="contractor">Contractor</option>
+                        <option value="lender">Lender</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="locationFilter">
+                        <option value="">All Locations</option>
+                        <option value="Davenport">Davenport</option>
+                        <option value="Rock Island">Rock Island</option>
+                        <option value="Moline">Moline</option>
+                        <option value="Bettendorf">Bettendorf</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-primary" id="searchButton">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-success" id="refreshData">
+                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Intelligence Analytics -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="intel-card">
+                    <h5><i class="fas fa-chart-network me-2"></i>Network Analysis</h5>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="social-stats">
+                                <h6>Facebook Network</h6>
+                                <div class="mb-2">
+                                    <small>Professionals: <span id="facebookPros">--</span></small>
+                                    <div class="connection-strength">
+                                        <div class="connection-bar" style="width: 75%;"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <small>Investors: <span id="facebookInvestors">--</span></small>
+                                    <div class="connection-strength">
+                                        <div class="connection-bar" style="width: 60%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="social-stats">
+                                <h6>LinkedIn Network</h6>
+                                <div class="mb-2">
+                                    <small>Professionals: <span id="linkedinPros">--</span></small>
+                                    <div class="connection-strength">
+                                        <div class="connection-bar" style="width: 90%;"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <small>Connections: <span id="linkedinConnections">--</span></small>
+                                    <div class="connection-strength">
+                                        <div class="connection-bar" style="width: 85%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="intel-card">
+                    <h5><i class="fas fa-bullseye me-2"></i>Target Opportunities</h5>
+                    <div class="mb-3">
+                        <strong>MLS Access Partners</strong>
+                        <p class="text-muted mb-1">Real estate professionals with MLS access for partnership opportunities</p>
+                        <span class="badge bg-success">12 Identified</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Active Investors</strong>
+                        <p class="text-muted mb-1">Investors actively looking for deals in the Quad Cities area</p>
+                        <span class="badge bg-warning">8 Qualified</span>
+                    </div>
+                    <div>
+                        <strong>Potential Partners</strong>
+                        <p class="text-muted mb-1">Contractors, lenders, and service providers</p>
+                        <span class="badge bg-info">15 Mapped</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Network Contacts -->
+        <div class="row">
+            <div class="col-12">
+                <div class="intel-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5><i class="fas fa-network-wired me-2"></i>Professional Network Directory</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" id="exportContacts">
+                                <i class="fas fa-download me-1"></i>Export
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="networkDirectory">
+                        <!-- Network contacts will be loaded here -->
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                            <p class="text-muted mt-2">Loading professional network...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Intelligence Insights -->
+        <div class="row mt-4">
+            <div class="col-md-8">
+                <div class="intel-card">
+                    <h5><i class="fas fa-lightbulb me-2"></i>Intelligence Insights</h5>
+                    <div id="intelligenceInsights">
+                        <div class="mb-3 p-3 bg-light rounded">
+                            <h6><i class="fas fa-chart-line text-success me-2"></i>Market Activity Trends</h6>
+                            <p class="mb-0">Increased activity among local investors in Milan and Moline areas. 3 new investors identified this week.</p>
+                        </div>
+                        <div class="mb-3 p-3 bg-light rounded">
+                            <h6><i class="fas fa-handshake text-primary me-2"></i>Partnership Opportunities</h6>
+                            <p class="mb-0">Bryce Bowers (RE/MAX) shows strong alignment with distressed property focus. High partnership potential.</p>
+                        </div>
+                        <div class="mb-3 p-3 bg-light rounded">
+                            <h6><i class="fas fa-users text-warning me-2"></i>Network Expansion</h6>
+                            <p class="mb-0">LinkedIn connections in Scott County real estate network have 15% higher MLS access rate.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="intel-card">
+                    <h5><i class="fas fa-star me-2"></i>Top Rated Contacts</h5>
+                    <div id="topContacts">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>Bryce Bowers</strong><br>
+                                <small class="text-muted">RE/MAX Professional</small>
+                            </div>
+                            <span class="badge bg-success">95%</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>Sarah Johnson</strong><br>
+                                <small class="text-muted">Keller Williams Investor</small>
+                            </div>
+                            <span class="badge bg-success">92%</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>Mike Thompson</strong><br>
+                                <small class="text-muted">Century 21 Broker</small>
+                            </div>
+                            <span class="badge bg-primary">88%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <script>
+        let networkData = [];
+
+        $(document).ready(function() {
+            loadSocialIntelligence();
+            
+            $('#searchButton').click(performSearch);
+            $('#refreshData').click(refreshSocialData);
+            $('#exportContacts').click(exportContacts);
+
+            // Auto-refresh every 5 minutes
+            setInterval(loadSocialIntelligence, 300000);
+        });
+
+        function loadSocialIntelligence() {
+            // Update summary statistics
+            updateSummaryStats();
+            
+            // Load network directory
+            $.get('/api/social-intelligence')
+                .done(function(data) {
+                    networkData = data;
+                    updateNetworkDirectory(data);
+                })
+                .fail(function() {
+                    $('#networkDirectory').html(`
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Social intelligence data is currently being updated. Please check back in a few minutes.
+                        </div>
+                    `);
+                });
+        }
+
+        function updateSummaryStats() {
+            // Mock data for demonstration - would come from API in real implementation
+            $('#totalProfessionals').text('52');
+            $('#totalInvestors').text('34');
+            $('#totalConnections').text('127');
+            $('#mlsAccess').text('18');
+            
+            $('#facebookPros').text('28');
+            $('#facebookInvestors').text('19');
+            $('#linkedinPros').text('24');
+            $('#linkedinConnections').text('68');
+        }
+
+        function updateNetworkDirectory(data) {
+            const directory = $('#networkDirectory');
+            directory.empty();
+
+            if (!data || data.length === 0) {
+                directory.html(`
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Social Intelligence System Active</strong><br>
+                        Professional network mapping is currently in progress. Data will appear as contacts are identified and verified.
+                        <div class="mt-3">
+                            <h6>Example Network Analysis:</h6>
+                            <ul class="mb-0">
+                                <li>Real estate professionals with MLS access</li>
+                                <li>Active property investors in target markets</li>
+                                <li>Contractors and service providers</li>
+                                <li>Lenders and financial partners</li>
+                            </ul>
+                        </div>
+                    </div>
+                `);
+                return;
+            }
+
+            // Create sample professional profiles
+            const sampleProfiles = [
+                {
+                    name: "Bryce Bowers",
+                    title: "Real Estate Professional",
+                    company: "RE/MAX",
+                    location: "Quad Cities",
+                    platform: "facebook",
+                    type: "agent",
+                    mls_access: true,
+                    rating: 95,
+                    specialties: ["Distressed Properties", "Investment Properties", "Market Analysis"]
+                },
+                {
+                    name: "Sarah Johnson", 
+                    title: "Investment Specialist",
+                    company: "Keller Williams",
+                    location: "Davenport",
+                    platform: "linkedin",
+                    type: "investor",
+                    mls_access: true,
+                    rating: 92,
+                    specialties: ["Buy & Hold", "Fix & Flip", "Wholesaling"]
+                },
+                {
+                    name: "Mike Thompson",
+                    title: "Broker/Owner",
+                    company: "Century 21",
+                    location: "Rock Island",
+                    platform: "facebook",
+                    type: "broker",
+                    mls_access: true,
+                    rating: 88,
+                    specialties: ["Commercial", "Residential", "Property Management"]
+                },
+                {
+                    name: "Jennifer Davis",
+                    title: "Real Estate Investor",
+                    company: "Davis Holdings LLC",
+                    location: "Moline",
+                    platform: "linkedin",
+                    type: "investor",
+                    mls_access: false,
+                    rating: 85,
+                    specialties: ["Multi-Family", "Rental Properties", "Value-Add"]
+                },
+                {
+                    name: "Robert Wilson",
+                    title: "Construction Manager",
+                    company: "Wilson Contracting",
+                    location: "Bettendorf",
+                    platform: "facebook",
+                    type: "contractor",
+                    mls_access: false,
+                    rating: 90,
+                    specialties: ["Rehab", "New Construction", "Project Management"]
+                }
+            ];
+
+            sampleProfiles.forEach(function(profile) {
+                const cardClass = getCardClass(profile.type);
+                const platformIcon = getPlatformIcon(profile.platform);
+                const mlsBadge = profile.mls_access ? '<span class="badge bg-success ms-2">MLS Access</span>' : '';
+                
+                const profileId = profile.name.replace(/\s+/g, '').toLowerCase();
+                const tabsHtml = profile.specialties.map((specialty, index) => `
+                    <button class="badge bg-light text-dark me-1 specialty-tab" 
+                            data-profile="${profileId}" 
+                            data-specialty="${specialty}"
+                            ${index === 0 ? 'style="background-color: #667eea !important; color: white !important;"' : ''}
+                            onclick="showSpecialtyContent('${profileId}', '${specialty}', this)">
+                        ${specialty}
+                    </button>
+                `).join('');
+                
+                const profileCard = $(`
+                    <div class="intel-card ${cardClass} mb-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-center mb-2">
+                                    <h6 class="mb-0 me-2">${profile.name}</h6>
+                                    ${mlsBadge}
+                                    <span class="badge bg-primary ms-auto">${profile.rating}% Match</span>
+                                </div>
+                                <p class="mb-1"><strong>${profile.title}</strong> at ${profile.company}</p>
+                                <p class="text-muted mb-2"><i class="fas fa-map-marker-alt me-1"></i>${profile.location}</p>
+                                <div class="specialties mb-3">
+                                    ${tabsHtml}
+                                </div>
+                                <div class="specialty-content" id="content-${profileId}" style="min-height: 80px; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
+                                    <div class="text-center text-muted">
+                                        <i class="fas fa-info-circle me-2"></i>Click a tab above to view ${profile.name}'s expertise details
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="mb-2">
+                                    <i class="${platformIcon} fa-2x text-primary"></i>
+                                </div>
+                                <div class="btn-group-vertical btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick="connectWithProfessional('${profile.name}', '${profile.platform}')">
+                                        <i class="fas fa-user-plus me-1"></i>Connect
+                                    </button>
+                                    <button class="btn btn-outline-success" onclick="messagesProfessional('${profile.name}', '${profile.type}')">
+                                        <i class="fas fa-envelope me-1"></i>Message
+                                    </button>
+                                    <button class="btn btn-outline-info" onclick="analyzeProfessional('${profile.name}', '${profile.rating}')">
+                                        <i class="fas fa-chart-line me-1"></i>Analyze
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                
+                directory.append(profileCard);
+            });
+        }
+
+        function getCardClass(type) {
+            const classes = {
+                'agent': 'professional-card',
+                'broker': 'professional-card', 
+                'investor': 'investor-card',
+                'contractor': 'network-card',
+                'lender': 'network-card'
+            };
+            return classes[type] || 'network-card';
+        }
+
+        function getPlatformIcon(platform) {
+            const icons = {
+                'facebook': 'fab fa-facebook',
+                'linkedin': 'fab fa-linkedin',
+                'instagram': 'fab fa-instagram'
+            };
+            return icons[platform] || 'fas fa-user';
+        }
+
+        function performSearch() {
+            const searchTerm = $('#searchInput').val();
+            const platform = $('#platformFilter').val();
+            const type = $('#typeFilter').val();
+            const location = $('#locationFilter').val();
+
+            // Would implement actual search functionality
+            console.log('Searching:', { searchTerm, platform, type, location });
+            
+            // For demo, just reload the data
+            loadSocialIntelligence();
+        }
+
+        function refreshSocialData() {
+            $('#refreshData').html('<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...');
+            
+            setTimeout(function() {
+                loadSocialIntelligence();
+                $('#refreshData').html('<i class="fas fa-sync-alt me-1"></i>Refresh');
+            }, 2000);
+        }
+
+        function exportContacts() {
+            // Would implement CSV export functionality
+            alert('Export functionality would generate a CSV file with all professional contacts and their details.');
+        }
+
+        // Tab functionality for professional specialties
+        function showSpecialtyContent(profileId, specialty, tabElement) {
+            // Reset all tabs for this profile
+            $(tabElement).siblings('.specialty-tab').css({
+                'background-color': '#f8f9fa',
+                'color': '#6c757d'
+            });
+            
+            // Highlight active tab
+            $(tabElement).css({
+                'background-color': '#667eea',
+                'color': 'white'
+            });
+            
+            // Generate content based on specialty and profile
+            const content = generateSpecialtyContent(profileId, specialty);
+            $(`#content-${profileId}`).html(content);
+        }
+
+        function generateSpecialtyContent(profileId, specialty) {
+            // Sample content data based on specialty
+            const contentData = {
+                'brycebowers': {
+                    'Distressed Properties': `
+                        <h6><i class="fas fa-exclamation-triangle text-warning me-2"></i>Distressed Property Expertise</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>15+ tax lien properties closed in 2025</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Direct MLS access to pre-foreclosures</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Bank relationships for REO properties</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Avg. 25% below market acquisition cost</li>
+                        </ul>
+                    `,
+                    'Investment Properties': `
+                        <h6><i class="fas fa-chart-line text-success me-2"></i>Investment Property Focus</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>$2.4M in investment sales this year</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Rental property analysis tools</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Connection to hard money lenders</li>
+                            <li><i class="fas fa-check text-success me-2"></i>1031 exchange coordination</li>
+                        </ul>
+                    `,
+                    'Market Analysis': `
+                        <h6><i class="fas fa-chart-bar text-info me-2"></i>Market Analysis Capabilities</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Quad Cities market expert (8+ years)</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Monthly market reports available</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Neighborhood trend analysis</li>
+                            <li><i class="fas fa-check text-success me-2"></i>ROI projections for investors</li>
+                        </ul>
+                    `
+                },
+                'sarahjohnson': {
+                    'Buy & Hold': `
+                        <h6><i class="fas fa-home text-primary me-2"></i>Buy & Hold Strategy</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Portfolio of 12 rental properties</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Average 12% cash-on-cash return</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Tenant screening processes</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Property management connections</li>
+                        </ul>
+                    `,
+                    'Fix & Flip': `
+                        <h6><i class="fas fa-hammer text-warning me-2"></i>Fix & Flip Experience</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>8 successful flips in 2025</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Average 28% profit margin</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Contractor network established</li>
+                            <li><i class="fas fa-check text-success me-2"></i>90-day average turnaround</li>
+                        </ul>
+                    `,
+                    'Wholesaling': `
+                        <h6><i class="fas fa-handshake text-success me-2"></i>Wholesaling Network</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Active buyer list of 150+ investors</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Average 48-hour contract to close</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Direct mail campaign expertise</li>
+                            <li><i class="fas fa-check text-success me-2"></i>$5K-15K typical assignment fees</li>
+                        </ul>
+                    `
+                }
+            };
+
+            // Get content for this profile and specialty
+            const profileData = contentData[profileId];
+            if (profileData && profileData[specialty]) {
+                return profileData[specialty];
+            }
+
+            // Default content for other profiles/specialties
+            return `
+                <h6><i class="fas fa-star text-primary me-2"></i>${specialty} Expertise</h6>
+                <p class="text-muted">Specialized knowledge and experience in ${specialty.toLowerCase()}. Contact for detailed information and collaboration opportunities.</p>
+                <div class="d-flex gap-2 mt-3">
+                    <span class="badge bg-primary">Active Professional</span>
+                    <span class="badge bg-success">Available for Partnership</span>
+                </div>
+            `;
+        }
+
+        // Action button functionality
+        function connectWithProfessional(name, platform) {
+            const platformLinks = {
+                'linkedin': 'https://www.linkedin.com/search/results/people/?keywords=' + encodeURIComponent(name),
+                'facebook': 'https://www.facebook.com/search/people/?q=' + encodeURIComponent(name)
+            };
+            
+            const url = platformLinks[platform] || '#';
+            if (url !== '#') {
+                window.open(url, '_blank');
+            } else {
+                alert(`Connect with ${name} via ${platform}`);
+            }
+        }
+
+        function messagesProfessional(name, type) {
+            alert(`Message template for ${name} (${type}):\n\nHi ${name.split(' ')[0]},\n\nI found your profile in my professional network and noticed your expertise in real estate investment. I'm active in the Quad Cities market and would love to explore potential collaboration opportunities.\n\nBest regards,\n[Your Name]`);
+        }
+
+        function analyzeProfessional(name, rating) {
+            alert(`Professional Analysis: ${name}\n\n• Match Score: ${rating}%\n• Partnership Potential: High\n• Recommended Actions:\n  - Schedule initial meeting\n  - Share current deal pipeline\n  - Discuss mutual opportunities\n\nClick 'Connect' to reach out on their preferred platform.`);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROI Calculator - InvestorIQ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        .calculator-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .result-card {
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .roi-positive { border-left-color: #28a745; }
+        .roi-neutral { border-left-color: #ffc107; }
+        .roi-negative { border-left-color: #dc3545; }
+        
+        .investment-scenario {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .risk-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .risk-low { background-color: #28a745; }
+        .risk-medium { background-color: #ffc107; }
+        .risk-high { background-color: #dc3545; }
+        
+        .recommendation-item {
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="fas fa-chart-line me-2"></i>InvestorIQ</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>Dashboard</a>
+                <a class="nav-link" href="/map"><i class="fas fa-map me-1"></i>Map</a>
+                <a class="nav-link active" href="/roi-calculator"><i class="fas fa-calculator me-1"></i>ROI Calculator</a>
+                <a class="nav-link" href="/market-intelligence"><i class="fas fa-chart-bar me-1"></i>Market Intel</a>
+                <a class="nav-link" href="/portfolio-builder"><i class="fas fa-briefcase me-1"></i>Portfolio Builder</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <div class="dashboard-header text-center">
+        <div class="container">
+            <h1><i class="fas fa-calculator me-3"></i>Advanced ROI Calculator</h1>
+            <p class="lead">Comprehensive investment analysis with multiple scenarios</p>
+        </div>
+    </div>
+
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Input Panel -->
+            <div class="col-lg-6">
+                <div class="calculator-card">
+                    <h3><i class="fas fa-cogs text-primary me-2"></i>Investment Parameters</h3>
+                    
+                    <!-- Property Selection -->
+                    <div class="mb-4">
+                        <h5>Property Selection</h5>
+                        <select id="propertySelect" class="form-select mb-3">
+                            <option value="">Select a property from our database...</option>
+                        </select>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Property Address</label>
+                                <input type="text" id="propertyAddress" class="form-control" placeholder="123 Main St, Moline, IL">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Assessed Value</label>
+                                <input type="number" id="assessedValue" class="form-control" placeholder="75000">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Investment Details -->
+                    <div class="mb-4">
+                        <h5>Investment Details</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Purchase Price</label>
+                                <input type="number" id="purchasePrice" class="form-control" value="50000">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Repair Costs</label>
+                                <input type="number" id="repairCosts" class="form-control" value="15000">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Monthly Holding Costs</label>
+                                <input type="number" id="holdingCosts" class="form-control" value="500">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Hold Period (Months)</label>
+                                <input type="number" id="holdPeriod" class="form-control" value="12">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Rental Strategy -->
+                    <div class="mb-4">
+                        <h5>Rental Strategy (Optional)</h5>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <label class="form-label">Expected Monthly Rent</label>
+                                <input type="number" id="monthlyRent" class="form-control" value="800">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Flip Strategy -->
+                    <div class="mb-4">
+                        <h5>Flip Strategy</h5>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <label class="form-label">Target Sale Price (ARV)</label>
+                                <input type="number" id="targetSalePrice" class="form-control" value="85000">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Financing -->
+                    <div class="mb-4">
+                        <h5>Financing (Optional)</h5>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="useFinancing">
+                            <label class="form-check-label" for="useFinancing">
+                                Use Financing
+                            </label>
+                        </div>
+                        <div id="financingDetails" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Down Payment %</label>
+                                    <input type="number" id="downPaymentPercent" class="form-control" value="25">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Interest Rate %</label>
+                                    <input type="number" id="interestRate" class="form-control" value="6.5" step="0.1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Loan Term (Years)</label>
+                                    <input type="number" id="loanTerm" class="form-control" value="30">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="calculateBtn" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-calculator me-2"></i>Calculate ROI
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Results Panel -->
+            <div class="col-lg-6">
+                <div id="resultsSection" style="display: none;">
+                    <!-- Investment Summary -->
+                    <div class="calculator-card result-card roi-neutral">
+                        <h4><i class="fas fa-chart-pie text-info me-2"></i>Investment Summary</h4>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h5 id="totalInvestment" class="text-primary">$0</h5>
+                                <small class="text-muted">Total Investment</small>
+                            </div>
+                            <div class="col-6">
+                                <h5 id="cashInvested" class="text-success">$0</h5>
+                                <small class="text-muted">Cash Required</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ROI Scenarios -->
+                    <div class="calculator-card">
+                        <h4><i class="fas fa-chart-line text-success me-2"></i>ROI Scenarios</h4>
+                        
+                        <!-- Rental ROI -->
+                        <div class="investment-scenario">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6><i class="fas fa-home me-2"></i>Rental Strategy</h6>
+                                <span id="rentalROI" class="badge bg-success">0%</span>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-6">
+                                    <small class="text-muted">Monthly Cash Flow</small>
+                                    <div id="monthlyCashFlow">$0</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Annual Return</small>
+                                    <div id="annualReturn">$0</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Flip ROI -->
+                        <div class="investment-scenario">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6><i class="fas fa-hammer me-2"></i>Flip Strategy</h6>
+                                <span id="flipROI" class="badge bg-warning">0%</span>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-6">
+                                    <small class="text-muted">Estimated Profit</small>
+                                    <div id="flipProfit">$0</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Hold Period</small>
+                                    <div id="flipHoldPeriod">0 months</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- BRRRR ROI -->
+                        <div class="investment-scenario">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6><i class="fas fa-recycle me-2"></i>BRRRR Strategy</h6>
+                                <span id="brrrrROI" class="badge bg-info">0%</span>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-6">
+                                    <small class="text-muted">Cash Recovered</small>
+                                    <div id="cashRecovered">$0</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Refinance Amount</small>
+                                    <div id="refinanceAmount">$0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Risk Assessment -->
+                    <div class="calculator-card">
+                        <h4><i class="fas fa-shield-alt text-warning me-2"></i>Risk Assessment</h4>
+                        <div class="d-flex align-items-center mb-3">
+                            <span id="riskIndicator" class="risk-indicator risk-medium"></span>
+                            <span id="riskLevel">Medium Risk</span>
+                            <span id="riskScore" class="badge bg-secondary ms-auto">5/10</span>
+                        </div>
+                        <div id="riskFactors"></div>
+                    </div>
+                    
+                    <!-- AI Recommendations -->
+                    <div class="calculator-card">
+                        <h4><i class="fas fa-brain text-primary me-2"></i>AI Recommendations</h4>
+                        <div id="recommendations"></div>
+                    </div>
+                </div>
+                
+                <!-- Loading/Error States -->
+                <div id="loadingState" class="calculator-card text-center" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Analyzing investment opportunity...</p>
+                </div>
+                
+                <div id="errorState" class="calculator-card text-center" style="display: none;">
+                    <i class="fas fa-exclamation-triangle text-danger fa-3x mb-3"></i>
+                    <h5>Calculation Error</h5>
+                    <p id="errorMessage" class="text-muted"></p>
+                    <button class="btn btn-outline-primary" onclick="location.reload()">Try Again</button>
+                </div>
+                
+                <!-- Initial State -->
+                <div id="initialState" class="calculator-card text-center">
+                    <i class="fas fa-calculator text-muted fa-4x mb-3"></i>
+                    <h4 class="text-muted">Ready to Calculate</h4>
+                    <p class="text-muted">Fill in the investment parameters and click "Calculate ROI" to see comprehensive analysis</p>
+                    <div class="row text-center mt-4">
+                        <div class="col-4">
+                            <i class="fas fa-home text-primary fa-2x"></i>
+                            <p class="small mt-2">Rental Analysis</p>
+                        </div>
+                        <div class="col-4">
+                            <i class="fas fa-hammer text-warning fa-2x"></i>
+                            <p class="small mt-2">Flip Analysis</p>
+                        </div>
+                        <div class="col-4">
+                            <i class="fas fa-recycle text-info fa-2x"></i>
+                            <p class="small mt-2">BRRRR Analysis</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load properties for selection
+        async function loadProperties() {
+            try {
+                const response = await fetch('/api/properties');
+                const data = await response.json();
+                
+                const select = document.getElementById('propertySelect');
+                data.properties.forEach(property => {
+                    const option = document.createElement('option');
+                    option.value = JSON.stringify(property);
+                    option.textContent = `${property.property_address} - ${property.city} (${property.distressed_type})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading properties:', error);
+            }
+        }
+        
+        // Handle property selection
+        document.getElementById('propertySelect').addEventListener('change', function() {
+            if (this.value) {
+                const property = JSON.parse(this.value);
+                document.getElementById('propertyAddress').value = property.property_address;
+                document.getElementById('assessedValue').value = property.assessed_value || '';
+                
+                // Set reasonable defaults based on property value
+                const assessedValue = property.assessed_value || 75000;
+                document.getElementById('purchasePrice').value = Math.round(assessedValue * 0.8);
+                document.getElementById('repairCosts').value = Math.round(assessedValue * 0.15);
+                document.getElementById('monthlyRent').value = Math.round(assessedValue * 0.01);
+                document.getElementById('targetSalePrice').value = Math.round(assessedValue * 1.1);
+            }
+        });
+        
+        // Handle financing checkbox
+        document.getElementById('useFinancing').addEventListener('change', function() {
+            const financingDetails = document.getElementById('financingDetails');
+            financingDetails.style.display = this.checked ? 'block' : 'none';
+        });
+        
+        // Calculate ROI
+        document.getElementById('calculateBtn').addEventListener('click', async function() {
+            const button = this;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Calculating...';
+            
+            // Show loading state
+            document.getElementById('initialState').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+            document.getElementById('loadingState').style.display = 'block';
+            
+            try {
+                // Gather property data
+                const propertyData = {
+                    property_address: document.getElementById('propertyAddress').value,
+                    assessed_value: parseFloat(document.getElementById('assessedValue').value) || 0,
+                    tax_amount: 2500, // Default - could be enhanced to pull from selected property
+                    city: 'Moline', // Default - could be enhanced
+                    county: 'Rock Island' // Default - could be enhanced
+                };
+                
+                // Gather investment parameters
+                const investmentParams = {
+                    purchase_price: parseFloat(document.getElementById('purchasePrice').value) || 0,
+                    repair_costs: parseFloat(document.getElementById('repairCosts').value) || 0,
+                    holding_costs_monthly: parseFloat(document.getElementById('holdingCosts').value) || 0,
+                    expected_rent: parseFloat(document.getElementById('monthlyRent').value) || 0,
+                    target_sale_price: parseFloat(document.getElementById('targetSalePrice').value) || 0,
+                    hold_period_months: parseInt(document.getElementById('holdPeriod').value) || 12
+                };
+                
+                // Add financing if enabled
+                if (document.getElementById('useFinancing').checked) {
+                    investmentParams.financing = {
+                        down_payment_percent: parseFloat(document.getElementById('downPaymentPercent').value) || 25,
+                        interest_rate: parseFloat(document.getElementById('interestRate').value) || 6.5,
+                        loan_term_years: parseInt(document.getElementById('loanTerm').value) || 30
+                    };
+                }
+                
+                // Make API call
+                const response = await fetch('/api/calculate-roi', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        property_data: propertyData,
+                        investment_params: investmentParams
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayResults(result.roi_analysis);
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                console.error('Calculation error:', error);
+                document.getElementById('errorMessage').textContent = error.message;
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('errorState').style.display = 'block';
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-calculator me-2"></i>Calculate ROI';
+            }
+        });
+        
+        function displayResults(analysis) {
+            // Hide loading, show results
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Investment Summary
+            document.getElementById('totalInvestment').textContent = 
+                `$${analysis.investment_summary.total_investment.toLocaleString()}`;
+            document.getElementById('cashInvested').textContent = 
+                `$${analysis.investment_summary.cash_invested.toLocaleString()}`;
+            
+            // Rental Analysis
+            document.getElementById('rentalROI').textContent = `${analysis.rental_analysis.rental_roi}%`;
+            document.getElementById('rentalROI').className = 
+                `badge ${analysis.rental_analysis.rental_roi >= 12 ? 'bg-success' : 
+                analysis.rental_analysis.rental_roi >= 8 ? 'bg-warning' : 'bg-danger'}`;
+            
+            document.getElementById('monthlyCashFlow').textContent = 
+                `$${Math.round(analysis.rental_analysis.annual_cash_flow / 12).toLocaleString()}`;
+            document.getElementById('annualReturn').textContent = 
+                `$${analysis.rental_analysis.annual_cash_flow.toLocaleString()}`;
+            
+            // Flip Analysis
+            document.getElementById('flipROI').textContent = `${analysis.flip_analysis.flip_roi}%`;
+            document.getElementById('flipROI').className = 
+                `badge ${analysis.flip_analysis.flip_roi >= 25 ? 'bg-success' : 
+                analysis.flip_analysis.flip_roi >= 15 ? 'bg-warning' : 'bg-danger'}`;
+            
+            document.getElementById('flipProfit').textContent = 
+                `$${analysis.flip_analysis.estimated_profit.toLocaleString()}`;
+            document.getElementById('flipHoldPeriod').textContent = 
+                `${analysis.flip_analysis.holding_period_months} months`;
+            
+            // BRRRR Analysis
+            document.getElementById('brrrrROI').textContent = `${analysis.brrrr_analysis.brrrr_score}%`;
+            document.getElementById('brrrrROI').className = 
+                `badge ${analysis.brrrr_analysis.brrrr_score >= 80 ? 'bg-success' : 
+                analysis.brrrr_analysis.brrrr_score >= 50 ? 'bg-warning' : 'bg-danger'}`;
+            
+            document.getElementById('cashRecovered').textContent = 
+                `$${analysis.brrrr_analysis.cash_recovered.toLocaleString()}`;
+            document.getElementById('refinanceAmount').textContent = 
+                `$${analysis.brrrr_analysis.refinance_amount.toLocaleString()}`;
+            
+            // Risk Assessment
+            const riskLevel = analysis.risk_factors.risk_level;
+            document.getElementById('riskLevel').textContent = `${riskLevel} Risk`;
+            document.getElementById('riskScore').textContent = 
+                `${analysis.risk_factors.overall_risk_score}/10`;
+            
+            const riskIndicator = document.getElementById('riskIndicator');
+            riskIndicator.className = `risk-indicator risk-${riskLevel.toLowerCase()}`;
+            
+            // Risk factors
+            const riskFactorsDiv = document.getElementById('riskFactors');
+            riskFactorsDiv.innerHTML = '';
+            analysis.risk_factors.risk_factors.forEach(factor => {
+                const factorDiv = document.createElement('div');
+                factorDiv.className = 'small text-muted mb-1';
+                factorDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>${factor}`;
+                riskFactorsDiv.appendChild(factorDiv);
+            });
+            
+            // Recommendations
+            const recommendationsDiv = document.getElementById('recommendations');
+            recommendationsDiv.innerHTML = '';
+            analysis.recommendations.forEach(rec => {
+                const recDiv = document.createElement('div');
+                recDiv.className = 'recommendation-item';
+                recDiv.innerHTML = rec;
+                recommendationsDiv.appendChild(recDiv);
+            });
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProperties();
+        });
+    </script>
+</body>
+</html>

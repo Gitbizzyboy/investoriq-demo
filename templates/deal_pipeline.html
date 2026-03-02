@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal Pipeline - InvestorIQ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        
+        /* Kanban Board Styles */
+        .pipeline-board {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            padding: 1rem 0;
+            min-height: 600px;
+        }
+        
+        .pipeline-stage {
+            flex: 0 0 300px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+        }
+        
+        .stage-header {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+        }
+        
+        .stage-watching { border-left-color: #6c757d; }
+        .stage-analyzing { border-left-color: #17a2b8; }
+        .stage-offer_submitted { border-left-color: #ffc107; }
+        .stage-under_contract { border-left-color: #fd7e14; }
+        .stage-closed { border-left-color: #28a745; }
+        .stage-passed { border-left-color: #dc3545; }
+        
+        .deal-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: move;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .deal-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        
+        .deal-card.dragging {
+            opacity: 0.6;
+        }
+        
+        .deal-card .property-address {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+        
+        .deal-card .property-city {
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+        
+        .deal-metrics {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .metric-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        .priority-indicator {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            color: #dc3545;
+        }
+        
+        /* Deal Detail Modal */
+        .detail-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0.5rem;
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+        }
+        
+        /* Summary Cards */
+        .summary-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .summary-card h3 {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .pipeline-board {
+                flex-direction: column;
+            }
+            
+            .pipeline-stage {
+                flex: 1 1 auto;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="fas fa-chart-line me-2"></i>InvestorIQ</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>Dashboard</a>
+                <a class="nav-link" href="/map"><i class="fas fa-map me-1"></i>Map</a>
+                <a class="nav-link active" href="/deal-pipeline"><i class="fas fa-tasks me-1"></i>Pipeline</a>
+                <a class="nav-link" href="/roi-calculator"><i class="fas fa-calculator me-1"></i>ROI</a>
+                <a class="nav-link" href="/market-intelligence"><i class="fas fa-chart-bar me-1"></i>Market</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <div class="dashboard-header text-center">
+        <div class="container">
+            <h1><i class="fas fa-tasks me-3"></i>Deal Pipeline Manager
+                <span class="badge bg-warning text-dark ms-2" style="font-size: 0.4em;">BETA</span>
+            </h1>
+            <p class="lead">Track properties from discovery to closing</p>
+        </div>
+    </div>
+
+    <div class="container-fluid mt-4">
+        <!-- Summary Row -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <h3 id="totalDeals">0</h3>
+                    <small class="text-muted">Total Active Deals</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <h3 id="pipelineValue">$0</h3>
+                    <small class="text-muted">Total Pipeline Value</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <h3 id="underContract">0</h3>
+                    <small class="text-muted">Under Contract</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <h3 id="closedThisMonth">0</h3>
+                    <small class="text-muted">Closed This Month</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <button class="btn btn-primary" onclick="showAddFromSearch()">
+                            <i class="fas fa-plus me-2"></i>Add From Search
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="generateLPReport()">
+                            <i class="fas fa-file-pdf me-2"></i>LP Report
+                        </button>
+                    </div>
+                    <div class="input-group" style="max-width: 300px;">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search deals...">
+                        <button class="btn btn-outline-secondary" onclick="searchDeals()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pipeline Board -->
+        <div class="pipeline-board" id="pipelineBoard">
+            <!-- Watching Stage -->
+            <div class="pipeline-stage" data-stage="watching">
+                <div class="stage-header stage-watching">
+                    <h5 class="mb-0">Watching</h5>
+                    <small class="text-muted">Saved from search</small>
+                    <div class="mt-2">
+                        <span class="badge bg-secondary" id="watching-count">0</span>
+                    </div>
+                </div>
+                <div class="stage-deals" id="watching-deals" ondrop="drop(event)" ondragover="allowDrop(event)" >
+                    <!-- Deal cards will be added here -->
+                </div>
+            </div>
+
+            <!-- Analyzing Stage -->
+            <div class="pipeline-stage" data-stage="analyzing">
+                <div class="stage-header stage-analyzing">
+                    <h5 class="mb-0">Analyzing</h5>
+                    <small class="text-muted">Running numbers</small>
+                    <div class="mt-2">
+                        <span class="badge bg-info" id="analyzing-count">0</span>
+                    </div>
+                </div>
+                <div class="stage-deals" id="analyzing-deals" ondrop="drop(event)" ondragover="allowDrop(event)" >
+                </div>
+            </div>
+
+            <!-- Offer Submitted Stage -->
+            <div class="pipeline-stage" data-stage="offer_submitted">
+                <div class="stage-header stage-offer_submitted">
+                    <h5 class="mb-0">Offer Submitted</h5>
+                    <small class="text-muted">Awaiting response</small>
+                    <div class="mt-2">
+                        <span class="badge bg-warning" id="offer_submitted-count">0</span>
+                    </div>
+                </div>
+                <div class="stage-deals" id="offer_submitted-deals" ondrop="drop(event)" ondragover="allowDrop(event)" >
+                </div>
+            </div>
+
+            <!-- Under Contract Stage -->
+            <div class="pipeline-stage" data-stage="under_contract">
+                <div class="stage-header stage-under_contract">
+                    <h5 class="mb-0">Under Contract</h5>
+                    <small class="text-muted">Due diligence</small>
+                    <div class="mt-2">
+                        <span class="badge bg-orange" id="under_contract-count">0</span>
+                    </div>
+                </div>
+                <div class="stage-deals" id="under_contract-deals" ondrop="drop(event)" ondragover="allowDrop(event)" >
+                </div>
+            </div>
+
+            <!-- Closed Stage -->
+            <div class="pipeline-stage" data-stage="closed">
+                <div class="stage-header stage-closed">
+                    <h5 class="mb-0">Closed</h5>
+                    <small class="text-muted">Completed deals</small>
+                    <div class="mt-2">
+                        <span class="badge bg-success" id="closed-count">0</span>
+                    </div>
+                </div>
+                <div class="stage-deals" id="closed-deals" ondrop="drop(event)" ondragover="allowDrop(event)" >
+                </div>
+            </div>
+
+            <!-- Passed Stage -->
+            <div class="pipeline-stage" data-stage="passed">
+                <div class="stage-header stage-passed">
+                    <h5 class="mb-0">Passed</h5>
+                    <small class="text-muted">Not pursuing</small>
+                    <div class="mt-2">
+                        <span class="badge bg-danger" id="passed-count">0</span>
+                    </div>
+                </div>
+                <div class="stage-deals" id="passed-deals" ondrop="drop(event)" ondragover="allowDrop(event)" >
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deal Detail Modal -->
+    <div class="modal fade" id="dealDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dealModalTitle">Deal Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="dealModalBody">
+                    <!-- Deal details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="openROICalculator()">
+                        <i class="fas fa-calculator me-2"></i>Calculate ROI
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add From Search Modal -->
+    <div class="modal fade" id="addFromSearchModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Property to Pipeline</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Select a property from the main dashboard to add to your pipeline:</p>
+                    <div id="availableProperties" class="list-group">
+                        <!-- Properties will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let deals = [];
+        let currentDealId = null;
+
+        // Load deals on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDeals();
+            loadPipelineSummary();
+        });
+
+        // Load all deals
+        async function loadDeals() {
+            try {
+                const response = await fetch('/api/deals');
+                const data = await response.json();
+                
+                if (data.success) {
+                    deals = data.deals;
+                    renderPipeline();
+                }
+            } catch (error) {
+                console.error('Error loading deals:', error);
+            }
+        }
+
+        // Load pipeline summary
+        async function loadPipelineSummary() {
+            try {
+                const response = await fetch('/api/deals/summary');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateSummaryCards(data.summary);
+                }
+            } catch (error) {
+                console.error('Error loading summary:', error);
+            }
+        }
+
+        // Render the pipeline board
+        function renderPipeline() {
+            // Clear all stages
+            const stages = ['watching', 'analyzing', 'offer_submitted', 'under_contract', 'closed', 'passed'];
+            stages.forEach(stage => {
+                const container = document.getElementById(`${stage}-deals`);
+                container.innerHTML = '';
+            });
+
+            // Group deals by stage
+            const dealsByStage = {};
+            deals.forEach(deal => {
+                if (!dealsByStage[deal.stage]) {
+                    dealsByStage[deal.stage] = [];
+                }
+                dealsByStage[deal.stage].push(deal);
+            });
+
+            // Render deals in each stage
+            stages.forEach(stage => {
+                const stageDeals = dealsByStage[stage] || [];
+                const container = document.getElementById(`${stage}-deals`);
+                const countBadge = document.getElementById(`${stage}-count`);
+                
+                countBadge.textContent = stageDeals.length;
+                
+                stageDeals.forEach(deal => {
+                    container.appendChild(createDealCard(deal));
+                });
+            });
+        }
+
+        // Create a deal card element
+        function createDealCard(deal) {
+            const card = document.createElement('div');
+            card.className = 'deal-card';
+            card.draggable = true;
+            card.dataset.dealId = deal.id;
+            card.addEventListener('dragstart', drag);
+            card.addEventListener('click', (e) => {
+                // Only show details if not dragging
+                if (!card.classList.contains('dragging')) {
+                    showDealDetails(deal.id);
+                }
+            });
+            
+            // Priority indicator
+            const priorityHtml = deal.is_priority ? 
+                '<i class="fas fa-star priority-indicator"></i>' : '';
+            
+            // ROI badges
+            const roiBadges = [];
+            if (deal.roi_rental) {
+                roiBadges.push(`<span class="badge bg-info metric-badge">Rental ${deal.roi_rental}%</span>`);
+            }
+            if (deal.roi_flip) {
+                roiBadges.push(`<span class="badge bg-success metric-badge">Flip ${deal.roi_flip}%</span>`);
+            }
+            
+            const offerPrice = deal.offer_price || deal.asking_price || 0;
+            
+            card.innerHTML = `
+                ${priorityHtml}
+                <div class="property-address">${deal.property_address}</div>
+                <div class="property-city">${deal.city}, ${deal.state || 'IL'}</div>
+                <div class="deal-metrics">
+                    <span class="badge bg-secondary metric-badge">$${offerPrice.toLocaleString()}</span>
+                    ${roiBadges.join('')}
+                </div>
+                ${deal.note_count > 0 ? `<small class="text-muted mt-2"><i class="fas fa-comment me-1"></i>${deal.note_count} notes</small>` : ''}
+                <div class="mt-2">
+                    <select class="form-select form-select-sm" onchange="quickMoveStage(${deal.id}, this.value)">
+                        <option value="">Move to...</option>
+                        <option value="watching" ${deal.stage === 'watching' ? 'disabled' : ''}>👀 Watching</option>
+                        <option value="analyzing" ${deal.stage === 'analyzing' ? 'disabled' : ''}>🔍 Analyzing</option>
+                        <option value="offer_submitted" ${deal.stage === 'offer_submitted' ? 'disabled' : ''}>💰 Offer Submitted</option>
+                        <option value="under_contract" ${deal.stage === 'under_contract' ? 'disabled' : ''}>📝 Under Contract</option>
+                        <option value="closed" ${deal.stage === 'closed' ? 'disabled' : ''}>✅ Closed</option>
+                        <option value="passed" ${deal.stage === 'passed' ? 'disabled' : ''}>❌ Passed</option>
+                    </select>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Simple drag and drop functions
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("dealId", ev.target.dataset.dealId);
+            ev.target.classList.add('dragging');
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            const dealId = ev.dataTransfer.getData("dealId");
+            const newStage = ev.target.closest('.pipeline-stage').dataset.stage;
+            
+            // Remove dragging class
+            document.querySelector('.dragging')?.classList.remove('dragging');
+            
+            // Update deal stage
+            updateDealStage(parseInt(dealId), newStage);
+        }
+
+        // Quick move stage via dropdown
+        function quickMoveStage(dealId, newStage) {
+            if (!newStage) return; // User selected "Move to..." option
+            updateDealStage(dealId, newStage);
+        }
+
+        // Update deal stage
+        async function updateDealStage(dealId, newStage) {
+            try {
+                const response = await fetch(`/api/deals/${dealId}/stage`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        stage: newStage,
+                        user: 'current_user',
+                        reason: 'Moved via pipeline board'
+                    })
+                });
+                
+                if (response.ok) {
+                    loadDeals();
+                    loadPipelineSummary();
+                } else {
+                    alert('Failed to update deal stage');
+                }
+            } catch (error) {
+                console.error('Error updating stage:', error);
+                alert('Error updating deal stage');
+            }
+        }
+
+        // Show deal details
+        async function showDealDetails(dealId) {
+            currentDealId = dealId;
+            
+            try {
+                const response = await fetch(`/api/deals/${dealId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayDealDetails(data.deal);
+                    new bootstrap.Modal(document.getElementById('dealDetailModal')).show();
+                }
+            } catch (error) {
+                console.error('Error loading deal details:', error);
+            }
+        }
+
+        // Display deal details in modal
+        function displayDealDetails(deal) {
+            document.getElementById('dealModalTitle').textContent = deal.property_address;
+            
+            const modalBody = document.getElementById('dealModalBody');
+            
+            // Build timeline
+            let timelineHtml = '<h6>Activity Timeline</h6><div class="detail-section">';
+            if (deal.stage_history) {
+                deal.stage_history.forEach(history => {
+                    timelineHtml += `
+                        <div class="timeline-item">
+                            <strong>${formatStage(history.new_stage)}</strong><br>
+                            <small class="text-muted">${new Date(history.changed_at).toLocaleString()}</small>
+                            ${history.reason ? `<br><small>${history.reason}</small>` : ''}
+                        </div>
+                    `;
+                });
+            }
+            timelineHtml += '</div>';
+            
+            // Build notes section
+            let notesHtml = '<h6>Notes</h6><div class="detail-section">';
+            if (deal.notes && deal.notes.length > 0) {
+                deal.notes.forEach(note => {
+                    notesHtml += `
+                        <div class="mb-3">
+                            <strong>${note.note_type}</strong> - ${new Date(note.created_at).toLocaleString()}<br>
+                            ${note.note_content}
+                        </div>
+                    `;
+                });
+            } else {
+                notesHtml += '<p class="text-muted">No notes yet</p>';
+            }
+            notesHtml += `
+                <div class="input-group mt-3">
+                    <input type="text" id="newNote" class="form-control" placeholder="Add a note...">
+                    <button class="btn btn-outline-secondary" onclick="addNote()">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>`;
+            
+            // Build financial section
+            let financialHtml = `
+                <h6>Financial Details</h6>
+                <div class="detail-section">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Asking Price:</strong> $${(deal.asking_price || 0).toLocaleString()}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Offer Price:</strong> $${(deal.offer_price || 0).toLocaleString()}
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-4">
+                            <strong>Rental ROI:</strong> ${deal.roi_rental || 'N/A'}%
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Flip ROI:</strong> ${deal.roi_flip || 'N/A'}%
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Risk Score:</strong> ${deal.risk_score || 'N/A'}/10
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modalBody.innerHTML = financialHtml + timelineHtml + notesHtml;
+        }
+
+        // Add note to deal
+        async function addNote() {
+            const noteContent = document.getElementById('newNote').value;
+            if (!noteContent) return;
+            
+            try {
+                const response = await fetch(`/api/deals/${currentDealId}/notes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        note_content: noteContent,
+                        note_type: 'general',
+                        user: 'current_user'
+                    })
+                });
+                
+                if (response.ok) {
+                    showDealDetails(currentDealId); // Reload details
+                }
+            } catch (error) {
+                console.error('Error adding note:', error);
+            }
+        }
+
+        // Update summary cards
+        function updateSummaryCards(summary) {
+            let totalDeals = 0;
+            let totalValue = 0;
+            let underContract = 0;
+            let closedThisMonth = 0;
+            
+            summary.forEach(stage => {
+                totalDeals += stage.deal_count;
+                totalValue += stage.total_pipeline_value || 0;
+                
+                if (stage.stage === 'under_contract') {
+                    underContract = stage.deal_count;
+                }
+                if (stage.stage === 'closed') {
+                    // This would need date filtering for "this month"
+                    closedThisMonth = stage.deal_count;
+                }
+            });
+            
+            document.getElementById('totalDeals').textContent = totalDeals;
+            document.getElementById('pipelineValue').textContent = `$${totalValue.toLocaleString()}`;
+            document.getElementById('underContract').textContent = underContract;
+            document.getElementById('closedThisMonth').textContent = closedThisMonth;
+        }
+
+        // Search deals
+        async function searchDeals() {
+            const searchTerm = document.getElementById('searchInput').value;
+            
+            try {
+                const response = await fetch(`/api/deals/search?q=${encodeURIComponent(searchTerm)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    deals = data.deals;
+                    renderPipeline();
+                }
+            } catch (error) {
+                console.error('Error searching deals:', error);
+            }
+        }
+
+        // Show add from search modal
+        async function showAddFromSearch() {
+            try {
+                const response = await fetch('/api/properties');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const container = document.getElementById('availableProperties');
+                    container.innerHTML = '';
+                    
+                    data.properties.slice(0, 20).forEach(property => {
+                        const item = document.createElement('a');
+                        item.className = 'list-group-item list-group-item-action';
+                        item.href = '#';
+                        item.onclick = (e) => {
+                            e.preventDefault();
+                            addPropertyToPipeline(property);
+                        };
+                        
+                        item.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${property.property_address}</h6>
+                                    <small>${property.city}, ${property.state || 'IL'}</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold">$${(property.assessed_value || 0).toLocaleString()}</div>
+                                    <small class="text-muted">${property.distressed_type}</small>
+                                </div>
+                            </div>
+                        `;
+                        
+                        container.appendChild(item);
+                    });
+                    
+                    new bootstrap.Modal(document.getElementById('addFromSearchModal')).show();
+                }
+            } catch (error) {
+                console.error('Error loading properties:', error);
+            }
+        }
+
+        // Add property to pipeline
+        async function addPropertyToPipeline(property) {
+            try {
+                const response = await fetch('/api/deals', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        property: property,
+                        user: 'current_user'
+                    })
+                });
+                
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('addFromSearchModal')).hide();
+                    loadDeals();
+                    loadPipelineSummary();
+                }
+            } catch (error) {
+                console.error('Error adding property:', error);
+            }
+        }
+
+        // Generate LP report
+        async function generateLPReport() {
+            try {
+                const response = await fetch('/api/deals/lp-report');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // For now, just show in console
+                    console.log('LP Report:', data.report);
+                    alert('LP Report generated - check console for now. PDF export coming soon!');
+                }
+            } catch (error) {
+                console.error('Error generating report:', error);
+            }
+        }
+
+        // Open ROI calculator for current deal
+        function openROICalculator() {
+            if (currentDealId) {
+                // Would redirect to ROI calculator with deal pre-loaded
+                window.location.href = `/roi-calculator?deal_id=${currentDealId}`;
+            }
+        }
+
+        // Format stage name for display
+        function formatStage(stage) {
+            return stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+    </script>
+</body>
+</html>

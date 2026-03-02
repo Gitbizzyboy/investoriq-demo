@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Intelligence - InvestorIQ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        .bi-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        .metric-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: transform 0.2s;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+        .roi-positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .roi-warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .roi-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 2rem;
+        }
+        .deal-pipeline {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+        .pipeline-stage {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+        }
+        .stage-prospects { border-left-color: #17a2b8; }
+        .stage-qualified { border-left-color: #ffc107; }
+        .stage-negotiation { border-left-color: #fd7e14; }
+        .stage-closing { border-left-color: #28a745; }
+        .stage-closed { border-left-color: #6c757d; }
+        .market-trend {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        .trend-up {
+            color: #28a745;
+        }
+        .trend-down {
+            color: #dc3545;
+        }
+        .trend-stable {
+            color: #6c757d;
+        }
+        .performance-indicator {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .competitor-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-brain me-2"></i>
+                InvestorIQ
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/map"><i class="fas fa-map me-1"></i>Map View</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/social-intelligence"><i class="fas fa-users me-1"></i>Social Intel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/business-intelligence"><i class="fas fa-chart-bar me-1"></i>Business Intel</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <section class="bi-header text-center">
+        <div class="container">
+            <h1><i class="fas fa-chart-bar me-3"></i>Business Intelligence Dashboard</h1>
+            <p class="lead">Market Analysis, Deal Pipeline & ROI Optimization</p>
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <h3 class="mb-0" id="totalOpportunities">{{ analytics.total_properties or 0 }}</h3>
+                    <small>Total Opportunities</small>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="mb-0">${{ "%.1f"|format((analytics.total_tax_debt or 0) / 1000000) }}M</h3>
+                    <small>Market Value</small>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="mb-0">{{ analytics.potential_breakdown.get('High Opportunity', 0) }}</h3>
+                    <small>High ROI Deals</small>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="mb-0">385%</h3>
+                    <small>Avg ROI Potential</small>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container mt-4">
+        <!-- KPI Dashboard -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="performance-indicator">
+                    <div class="kpi-value roi-positive">$2.4M</div>
+                    <small>Deal Pipeline Value</small>
+                    <div class="mt-2">
+                        <i class="fas fa-arrow-up trend-up me-1"></i>
+                        <small class="trend-up">+23% from last month</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="performance-indicator">
+                    <div class="kpi-value roi-positive">72%</div>
+                    <small>Conversion Rate</small>
+                    <div class="mt-2">
+                        <i class="fas fa-arrow-up trend-up me-1"></i>
+                        <small class="trend-up">+8% improvement</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="performance-indicator">
+                    <div class="kpi-value roi-warning">14</div>
+                    <small>Days Avg Close</small>
+                    <div class="mt-2">
+                        <i class="fas fa-arrow-down trend-up me-1"></i>
+                        <small class="trend-up">-6 days faster</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="performance-indicator">
+                    <div class="kpi-value roi-positive">$47K</div>
+                    <small>Avg Deal Profit</small>
+                    <div class="mt-2">
+                        <i class="fas fa-arrow-up trend-up me-1"></i>
+                        <small class="trend-up">+15% increase</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="metric-card">
+                    <h5><i class="fas fa-chart-line me-2"></i>Deal Flow Analysis</h5>
+                    <div class="chart-container">
+                        <canvas id="dealFlowChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="metric-card">
+                    <h5><i class="fas fa-chart-pie me-2"></i>Revenue Distribution</h5>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deal Pipeline -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="metric-card">
+                    <h5><i class="fas fa-funnel-dollar me-2"></i>Deal Pipeline Management</h5>
+                    <div class="deal-pipeline">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="pipeline-stage stage-prospects">
+                                    <h6>Prospects</h6>
+                                    <div class="kpi-value text-primary">47</div>
+                                    <small>Properties identified</small>
+                                    <div class="mt-2">
+                                        <div class="progress">
+                                            <div class="progress-bar" style="width: 85%"></div>
+                                        </div>
+                                        <small>85% of target</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="pipeline-stage stage-qualified">
+                                    <h6>Qualified</h6>
+                                    <div class="kpi-value text-warning">23</div>
+                                    <small>Due diligence complete</small>
+                                    <div class="mt-2">
+                                        <div class="progress">
+                                            <div class="progress-bar bg-warning" style="width: 72%"></div>
+                                        </div>
+                                        <small>72% conversion</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="pipeline-stage stage-negotiation">
+                                    <h6>Negotiation</h6>
+                                    <div class="kpi-value text-orange">12</div>
+                                    <small>Active negotiations</small>
+                                    <div class="mt-2">
+                                        <div class="progress">
+                                            <div class="progress-bar bg-warning" style="width: 60%"></div>
+                                        </div>
+                                        <small>60% progress</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="pipeline-stage stage-closing">
+                                    <h6>Closing</h6>
+                                    <div class="kpi-value text-success">8</div>
+                                    <small>In closing process</small>
+                                    <div class="mt-2">
+                                        <div class="progress">
+                                            <div class="progress-bar bg-success" style="width: 90%"></div>
+                                        </div>
+                                        <small>90% completion</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="pipeline-stage stage-closed">
+                                    <h6>Closed</h6>
+                                    <div class="kpi-value text-success">6</div>
+                                    <small>This month</small>
+                                    <div class="mt-2">
+                                        <span class="badge bg-success">+$285K Revenue</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="pipeline-stage">
+                                    <h6>Pipeline ROI</h6>
+                                    <div class="kpi-value roi-positive">387%</div>
+                                    <small>Average return</small>
+                                    <div class="mt-2">
+                                        <i class="fas fa-trophy text-warning"></i>
+                                        <small>Above target</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Intelligence -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="metric-card">
+                    <h5><i class="fas fa-chart-area me-2"></i>Market Trends</h5>
+                    <div class="market-trend">
+                        <div>
+                            <strong>Average Tax Debt</strong><br>
+                            <small class="text-muted">Rock Island County</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="trend-up">$47,200</div>
+                            <small class="trend-up"><i class="fas fa-arrow-up"></i> +12%</small>
+                        </div>
+                    </div>
+                    <div class="market-trend">
+                        <div>
+                            <strong>Foreclosure Rate</strong><br>
+                            <small class="text-muted">Scott County</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="trend-down">2.3%</div>
+                            <small class="trend-up"><i class="fas fa-arrow-down"></i> -0.8%</small>
+                        </div>
+                    </div>
+                    <div class="market-trend">
+                        <div>
+                            <strong>Property Values</strong><br>
+                            <small class="text-muted">Quad Cities Average</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="trend-up">$127K</div>
+                            <small class="trend-up"><i class="fas fa-arrow-up"></i> +5.2%</small>
+                        </div>
+                    </div>
+                    <div class="market-trend">
+                        <div>
+                            <strong>Days on Market</strong><br>
+                            <small class="text-muted">Distressed Properties</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="trend-down">89 days</div>
+                            <small class="trend-up"><i class="fas fa-arrow-down"></i> -23 days</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="metric-card">
+                    <h5><i class="fas fa-trophy me-2"></i>Top Performing Strategies</h5>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Tax Deed Auctions</strong>
+                                <div class="progress mt-1" style="height: 6px;">
+                                    <div class="progress-bar bg-success" style="width: 92%"></div>
+                                </div>
+                            </div>
+                            <span class="badge bg-success">92% ROI</span>
+                        </div>
+                        <small class="text-muted">Milan/Moline focus areas</small>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Direct Owner Contact</strong>
+                                <div class="progress mt-1" style="height: 6px;">
+                                    <div class="progress-bar bg-primary" style="width: 78%"></div>
+                                </div>
+                            </div>
+                            <span class="badge bg-primary">78% ROI</span>
+                        </div>
+                        <small class="text-muted">High tax debt properties</small>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Wholesale Assignments</strong>
+                                <div class="progress mt-1" style="height: 6px;">
+                                    <div class="progress-bar bg-warning" style="width: 65%"></div>
+                                </div>
+                            </div>
+                            <span class="badge bg-warning">65% ROI</span>
+                        </div>
+                        <small class="text-muted">Quick turnaround deals</small>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Foreclosure Intervention</strong>
+                                <div class="progress mt-1" style="height: 6px;">
+                                    <div class="progress-bar bg-info" style="width: 58%"></div>
+                                </div>
+                            </div>
+                            <span class="badge bg-info">58% ROI</span>
+                        </div>
+                        <small class="text-muted">Pre-foreclosure outreach</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Competitive Analysis -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="metric-card">
+                    <h5><i class="fas fa-chess me-2"></i>Competitive Intelligence</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="competitor-card">
+                                <h6><i class="fas fa-building me-2"></i>BiggerPockets</h6>
+                                <div class="mb-2">
+                                    <small>Market Coverage:</small>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-warning" style="width: 60%"></div>
+                                    </div>
+                                    <small class="text-muted">60% overlap</small>
+                                </div>
+                                <div class="mb-2">
+                                    <small>Data Quality:</small>
+                                    <span class="badge bg-secondary">Limited</span>
+                                </div>
+                                <small><strong>Our Advantage:</strong> Real-time tax data</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="competitor-card">
+                                <h6><i class="fas fa-chart-line me-2"></i>RealtyTrac</h6>
+                                <div class="mb-2">
+                                    <small>Market Coverage:</small>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-info" style="width: 75%"></div>
+                                    </div>
+                                    <small class="text-muted">75% overlap</small>
+                                </div>
+                                <div class="mb-2">
+                                    <small>Data Quality:</small>
+                                    <span class="badge bg-primary">Good</span>
+                                </div>
+                                <small><strong>Our Advantage:</strong> Contact integration</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="competitor-card">
+                                <h6><i class="fas fa-home me-2"></i>Local Wholesalers</h6>
+                                <div class="mb-2">
+                                    <small>Market Coverage:</small>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" style="width: 40%"></div>
+                                    </div>
+                                    <small class="text-muted">40% overlap</small>
+                                </div>
+                                <div class="mb-2">
+                                    <small>Data Quality:</small>
+                                    <span class="badge bg-secondary">Manual</span>
+                                </div>
+                                <small><strong>Our Advantage:</strong> Systematic coverage</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="competitor-card">
+                                <h6><i class="fas fa-star me-2"></i>Our Platform</h6>
+                                <div class="mb-2">
+                                    <small>Market Coverage:</small>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" style="width: 95%"></div>
+                                    </div>
+                                    <small class="text-success">95% comprehensive</small>
+                                </div>
+                                <div class="mb-2">
+                                    <small>Data Quality:</small>
+                                    <span class="badge bg-success">Excellent</span>
+                                </div>
+                                <small><strong>Unique:</strong> Multi-source intelligence</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Items -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="metric-card">
+                    <h5><i class="fas fa-tasks me-2"></i>Strategic Action Items</h5>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Expand Milan Market Coverage</strong><br>
+                                <small class="text-muted">High ROI opportunity identified in Milan tax distressed segment</small>
+                            </div>
+                            <span class="badge bg-danger">High Priority</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Enhance Social Intelligence Integration</strong><br>
+                                <small class="text-muted">Connect with 8 new MLS access professionals identified</small>
+                            </div>
+                            <span class="badge bg-warning">Medium Priority</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Automate Bryce Partnership Workflow</strong><br>
+                                <small class="text-muted">Streamline deal sharing with high-potential partners</small>
+                            </div>
+                            <span class="badge bg-info">Medium Priority</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Scott County Foreclosure Pipeline</strong><br>
+                                <small class="text-muted">13 foreclosure opportunities need follow-up action</small>
+                            </div>
+                            <span class="badge bg-success">Low Priority</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="metric-card">
+                    <h5><i class="fas fa-calendar me-2"></i>Upcoming Milestones</h5>
+                    <div class="timeline">
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="badge bg-danger me-2">Mar 5</div>
+                                <small>Milan tax sale auction</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="badge bg-warning me-2">Mar 12</div>
+                                <small>Quarterly market review</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="badge bg-info me-2">Mar 18</div>
+                                <small>SFR3 partnership meeting</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="badge bg-success me-2">Mar 25</div>
+                                <small>System expansion to Cedar Rapids</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            createDealFlowChart();
+            createRevenueChart();
+        });
+
+        function createDealFlowChart() {
+            const ctx = document.getElementById('dealFlowChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [
+                        {
+                            label: 'Properties Identified',
+                            data: [23, 34, 45, 52, 61, 47],
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Deals Closed',
+                            data: [3, 5, 8, 12, 15, 18],
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Revenue ($000)',
+                            data: [45, 78, 125, 189, 234, 285],
+                            borderColor: '#fd7e14',
+                            backgroundColor: 'rgba(253, 126, 20, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function createRevenueChart() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Tax Deed Auctions', 'Direct Purchase', 'Wholesale', 'Foreclosure'],
+                    datasets: [{
+                        data: [45, 25, 20, 10],
+                        backgroundColor: [
+                            '#28a745',
+                            '#667eea', 
+                            '#ffc107',
+                            '#dc3545'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
