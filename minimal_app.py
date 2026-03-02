@@ -3,7 +3,7 @@
 InvestorIQ - Minimal Demo Version (No Authentication)
 """
 
-from flask import Flask, render_template, jsonify, redirect
+from flask import Flask, render_template, jsonify
 import sqlite3
 import os
 
