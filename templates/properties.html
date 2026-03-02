@@ -350,8 +350,8 @@
                 `;
 
                 // Create thumbnail
-                const thumbnail = property.street_view_thumbnail ? 
-                    `<img src="${property.street_view_thumbnail}" alt="Property Preview" class="property-thumbnail" 
+                const thumbnail = property.street_view_url ? 
+                    `<img src="${property.street_view_url}" alt="Property Preview" class="property-thumbnail" 
                           onclick="window.open('${property.street_view_url}', '_blank')" 
                           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                      <div class="thumbnail-placeholder" style="display: none;" onclick="window.open('${property.street_view_url}', '_blank')">
