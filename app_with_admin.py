@@ -130,23 +130,11 @@ class PropertyIntelligencePlatform:
             
             password_hash = self.hash_password(password)
             
-            # Check if this is the first user (make them admin automatically)
-            cursor.execute("SELECT COUNT(*) FROM users")
-            user_count = cursor.fetchone()[0]
-            
-            if user_count == 0:
-                # First user becomes admin automatically
-                cursor.execute('''
-                    INSERT INTO users (email, password_hash, first_name, last_name, company, phone, 
-                                     approval_status, access_level, verified, terms_accepted)
-                    VALUES (?, ?, ?, ?, ?, ?, 'approved', 'admin', 1, 0)
-                ''', (email, password_hash, first_name, last_name, company, phone))
-            else:
-                # Regular users require approval
-                cursor.execute('''
-                    INSERT INTO users (email, password_hash, first_name, last_name, company, phone, approval_status)
-                    VALUES (?, ?, ?, ?, ?, ?, 'pending')
-                ''', (email, password_hash, first_name, last_name, company, phone))
+            # Create user with pending status
+            cursor.execute('''
+                INSERT INTO users (email, password_hash, first_name, last_name, company, phone, approval_status)
+                VALUES (?, ?, ?, ?, ?, ?, 'pending')
+            ''', (email, password_hash, first_name, last_name, company, phone))
             
             user_id = cursor.lastrowid
             
