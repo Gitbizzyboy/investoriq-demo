@@ -82,6 +82,7 @@ class PropertyIntelligencePlatform:
                         approved_by INTEGER,
                         approved_at TIMESTAMP,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        last_login TIMESTAMP,
                         last_login TIMESTAMP
                     )
                 ''')
@@ -132,6 +133,7 @@ class PropertyIntelligencePlatform:
                         approved_by INTEGER,
                         approved_at TIMESTAMP,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        last_login TIMESTAMP,
                         last_login TIMESTAMP
                     )
                 ''')
