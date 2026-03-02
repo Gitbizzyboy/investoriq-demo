@@ -13,12 +13,13 @@ import secrets
 import urllib.parse
 
 # Database imports
+import sqlite3  # Always needed for master property database
+
 try:
     import psycopg2
     import psycopg2.extras
     DATABASE_TYPE = 'postgresql'
 except ImportError:
-    import sqlite3
     DATABASE_TYPE = 'sqlite'
     print("⚠️ PostgreSQL not available, falling back to SQLite")
 
